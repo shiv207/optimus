@@ -1,0 +1,359 @@
+/* Global Styles */
+body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #000000;
+    color: #ffffff;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+.stApp {
+    background-color: rgb(0, 0, 0);
+}
+
+/* Header Styles */
+.header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    margin-bottom: 30px;
+    margin-top: 1cm;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    gap: 10px;
+}
+
+.avatar-icon {
+    width: 40px;
+    height: 40px;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.avatar-icon:hover {
+    transform: rotate(360deg);
+}
+
+.header-content h1 {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ffffff;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    animation: strobe 2s infinite ease-in-out;
+}
+
+.stImage {
+    border-radius: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+    max-width: 100%;
+    height: auto;
+    width: 100%;
+}
+
+.stImage:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Chat Area Styles */
+.stChatMessage {
+    border-radius: 20px;
+    padding: 15px;
+    margin-bottom: 20px;
+    max-width: 75%;
+    transition: transform 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.stChatMessage[data-testid="user-message"] {
+    background-color: #1d1d1d !important;
+    color: #ffffffd2;
+    margin-left: auto;
+    text-align: right;
+    border-color: #777777;
+    border-width: 2px;
+    border-radius: 20px;
+    border: 1px solid #000000 !important;
+    backdrop-filter: blur(10px);
+}
+
+.stChatMessage .message {
+    background-repeat: repeat !important;
+    background-size: 200px 200px !important;
+    color: #000 !important;
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.stChatMessage .message strong {
+    color: #1e88e5;
+    font-weight: 600;
+}
+
+.stChatMessage[data-testid="assistant-message"] {
+    background-color: #141414 !important;
+    color: #ffffff;
+}
+
+.stChatMessage:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.525);
+}
+
+/* Avatar Styles */
+.stChatMessage .stAvatar {
+    width: 45px !important;
+    height: 45px !important;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.st-emotion-cache-qdbtli {
+    background-color: #000000;
+}
+
+.stChatMessage .stAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Image Styles */
+.stImage>img {
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+    width: 100%;
+    height: auto;
+}
+
+.stImage>img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.981);
+}
+
+/* Title Styles */
+h1 {
+    color: #fffffffc;
+    text-shadow:
+        0 0 20px rgba(255, 255, 255, 0.5),
+        0 0 30px rgba(255, 255, 255, 0.4),
+        0 0 45px rgba(0, 173, 255, 0.4);
+    font-size: 40px;
+    text-align: center;
+    margin-top: -150px;
+    letter-spacing: 1.5px;
+}
+
+/* Chat Input Styling */
+.stChatFloatingInputContainer {
+    background-color: transparent !important;
+    position: fixed;
+    bottom: 2cm; /* Changed from 0 to 2cm */
+    width: 100%;
+    padding: 15px;
+    z-index: 2;
+}
+
+.stChatInputContainer {
+    background-color: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 20px !important;
+    padding: 10px 15px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stChatInputContainer input {
+    background-color: #000000 !important;
+    color: white !important;
+    border: none !important;
+    outline: none;
+    flex-grow: 1;
+    font-size: 16px;
+    padding: 10px;
+    border-radius: 15px;
+}
+
+.stChatInputContainer input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Style the send button */
+.stChatInputContainer button {
+    background-color: transparent !important;
+    color: white !important;
+    border: none !important;
+    padding: 5px;
+    cursor: pointer;
+}
+
+textarea {
+    background-color: #000000;
+    height: 50px;
+    bottom: 20px;
+    color: white;
+}
+
+div[data-testid="stChatInput"] {
+    border-radius: 50px;
+    bottom: 0.6cm;
+    position: fixed;
+    left: -700;
+    right: -50;
+    padding: 0 20px;
+}
+
+div[data-testid="stChatInput"] {
+    border-radius: 50px;
+    background-color: rgba(25, 25, 25, 0.746);
+}
+
+div[data-testid="stChatInputTextArea"] {
+    background-color: #000000;
+    margin-left: 0.3cm;
+}
+
+div[data-baseweb="textarea"] {
+    border-color: transparent;
+    border-radius: 50px;
+}
+
+/* New rule to adjust button position */
+div[data-testid="stChatInput"] button {
+    position: absolute;
+    border-radius: 100px;
+    right: calc(0cm + 20px);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Ensure the chat messages don't get hidden behind the input */
+.stChatMessageContent {
+    margin-bottom: calc(60px + 1cm);
+    background-color: #000000;
+}
+
+/* Light Theme */
+@media (prefers-color-scheme: light) {
+    body {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    .stApp {
+        background-color: #ffffff;
+    }
+
+    .st-emotion-cache-qdbtli {
+        background-color: #ffffff;
+    }
+
+    /* Grid SVG */
+    .fixed-grid svg path {
+        stroke: #000000;
+    }
+
+    /* Header Styles */
+    .header-content h1 {
+        color: #000000;
+        text-shadow: none;
+    }
+
+    /* Chat Area Styles */
+    .stChatMessage {
+        background-color: #f0f0f0 !important;
+        color: #000000;
+    }
+
+    div[data-testid="stChatInput"] {
+        border-radius: 50px;
+        background-color: rgba(237, 237, 237, 0.964);
+    }
+
+    .stChatMessage[data-testid="user-message"] {
+        background-color: #e5e5e5 !important;
+        color: #000000;
+        border: 1px solid #000000 !important;
+    }
+
+    .stChatMessage[data-testid="assistant-message"] {
+        background-color: #ebebeb !important;
+        color: #000000;
+    }
+
+    .stChatMessage:hover {
+        background-color: #d9d9d9 !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Title Styles */
+    h1 {
+        color: #000000;
+        text-shadow: none;
+    }
+
+    /* Chat Input Styling */
+    .stChatInputContainer {
+        background-color: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .stChatInputContainer input {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .stChatInputContainer input::placeholder {
+        color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .stChatInputContainer button {
+        color: black !important;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header-content h1 {
+        font-size: 28px;
+    }
+
+    .avatar-icon {
+        width: 30px;
+        height: 30px;
+    }
+
+    .stImage>img {
+        width: 100%;
+        height: auto;
+    }
+
+    .stChatFloatingInputContainer {
+        padding: 10px;
+    }
+
+    .stChatInputContainer {
+        padding: 8px 12px;
+    }
+
+    .stChatInputContainer input {
+        font-size: 14px;
+    }
+}
+
+/* Remove Streamlit elements */
+#MainMenu, footer, header {
+    visibility: hidden;
+}
+
