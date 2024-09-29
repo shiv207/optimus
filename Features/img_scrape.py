@@ -83,7 +83,7 @@ def handle_image_search_and_description(query: str, num_images=5):
     return output
 
 def process_image_query(query: str):
-    # CSS for rounded images and description with light theme
+    # CSS for responsive design and improved UI
     custom_css = """
     <style>
         :root {
@@ -101,12 +101,16 @@ def process_image_query(query: str):
         }
 
         .img-rounded {
-            border-radius: 20px;  /* Rounded corners */
+            border-radius: 15px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            margin-bottom: 15px;
         }
 
         .img-rounded:hover {
-            transform: scale(1.03);  /* Slight zoom effect on hover */
+            transform: scale(1.02);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
@@ -116,17 +120,39 @@ def process_image_query(query: str):
         
         .description-box {
             background-color: var(--bg-color);
-            background-size: cover;
-            background-position: center;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
             color: var(--text-color);
             font-family: 'Arial', sans-serif;
             font-size: 16px;
-            line-height: 1.5;
-            letter-spacing: 0.5px;
+            line-height: 1.6;
+            letter-spacing: 0.3px;
             box-shadow: var(--box-shadow);
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .image-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .description-box {
+                font-size: 14px;
+                padding: 15px;
+            }
+
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Additional styles for better light theme visibility */
@@ -160,16 +186,18 @@ def process_image_query(query: str):
         
         # Only proceed if valid images exist
         if valid_image_urls:
-            cols = st.columns(min(3, len(valid_image_urls)))  # Create a column for each image, max 3
-            for i, img_url in enumerate(valid_image_urls[:3]):  # Limit to 3 images
-                with cols[i % 3]:
-                    st.markdown(f'<img src="{img_url}" class="img-rounded" style="width:100%;">', unsafe_allow_html=True)
+            st.markdown('<div class="image-grid">', unsafe_allow_html=True)
+            for img_url in valid_image_urls[:6]:  # Limit to 6 images
+                st.markdown(f'''
+                    <div class="image-container">
+                        <img src="{img_url}" class="img-rounded" loading="lazy">
+                    </div>
+                ''', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         else:
-            # If no valid images after filtering
-            st.markdown('<div class="stChatMessage message img-scrape">No valid images found for the given query.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="description-box">No valid images found for the given query.</div>', unsafe_allow_html=True)
     else:
-        # If there were no images in the result
-        st.markdown('<div class="stChatMessage message img-scrape">No images found for the given query.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="description-box">No images found for the given query.</div>', unsafe_allow_html=True)
 
 def handle_image_search(query: str):
     return process_image_query(query)

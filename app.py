@@ -20,13 +20,12 @@ st.set_page_config(page_title="Optimus", layout="wide", page_icon="Images/avatar
 
 # System message and configuration
 sys_msg = (
-    'You are a multi-modal AI voice assistant. Your user may or may not have attached a photo for context '
-    '(either a screenshot or a webcam capture). Any photo has already been processed into a highly detailed '
-    'text prompt that will be attached to their transcribed voice prompt. Generate the most useful and '
-    'factual response possible, carefully considering all previous generated text in your response before '
-    'adding new tokens to the response. Do not expect or request images, just use the context if added. '
-    'Use all of the context of this conversation so your response is relevant to the conversation. Make '
-    'your responses clear and concise, avoiding any verbosity.'
+    "You are a multi-modal AI voice assistant. Be concise and value the context. "
+    "Generate the most useful and factual responses, keeping in mind all previous conversation history. "
+    "Add new tokens to your response only when necessary. No need for images—let's stick to words for now. "
+    "Use the entire context of our chat to ensure your responses are relevant. "
+    "And remember, a little humor goes a long way; aim for a 30% smile factor in your delivery. "
+    "Lets keep it clear and concise, but feel free to sprinkle in some wit!"
 )
 
 convo = [{'role': 'system', 'content': sys_msg}]
@@ -254,6 +253,39 @@ def parse_groq_stream(stream):
     return response
 
 def streamlit_ui():
+    # Hide Streamlit's default elements
+    hide_st_style = """
+        <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        </style>
+    """
+    st.markdown(hide_st_style, unsafe_allow_html=True)
+
+    # Responsive design for mobile
+    st.markdown("""
+        <style>
+        @media (max-width: 768px) {
+            .stChatMessage {
+                padding: 10px !important;
+            }
+            .stChatMessage .stMarkdown {
+                font-size: 14px !important;
+            }
+            .stChatInputContainer {
+                padding: 5px !important;
+            }
+            .stChatInput {
+                font-size: 14px !important;
+            }
+            .header-container h1 {
+                font-size: 24px !important;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # Load CSS from external file
     st.markdown(load_css('style.css'), unsafe_allow_html=True)
     
@@ -280,10 +312,10 @@ def streamlit_ui():
             if "content" in msg:
                 st.markdown(msg["content"])  # Display text content
             if "image_path" in msg:
-                st.image(msg["image_path"], use_column_width=True)  # Display images if any
+                st.image(msg["image_path"], use_column_width=True, output_format="JPEG", quality=85)  # Display images if any
     st.markdown("</div>", unsafe_allow_html=True)
 
-    prompt = st.chat_input("Ask Optimus something", key="chat_input")
+    prompt = st.chat_input("Message", key="chat_input")
 
     # Handle user input when prompt is entered
     if prompt:
