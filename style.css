@@ -188,7 +188,7 @@ h1 {
 .stChatFloatingInputContainer {
     background-color: transparent !important;
     position: fixed;
-    bottom: 2cm; /* Changed from 0 to 2cm */
+    bottom: 2cm;
     width: 100%;
     padding: 15px;
     z-index: 2;
@@ -446,10 +446,16 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
         position: relative;
         z-index: 1;
     }
+
 }
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    body, .stApp {
+        font-size: 16px;
+    }
+
     .header-content h1 {
         font-size: 28px;
     }
@@ -462,18 +468,78 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     .stImage>img {
         width: 100%;
         height: auto;
+        border-radius: 10px;
     }
 
     .stChatFloatingInputContainer {
         padding: 10px;
+        bottom: 10px;
     }
 
     .stChatInputContainer {
         padding: 8px 12px;
+        border-radius: 20px;
     }
 
     .stChatInputContainer input {
         font-size: 14px;
+    }
+
+    .stChatMessage {
+        max-width: 90%; /* Increased from 75% to 90% */
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 15px;
+    }
+
+    /* Ensure user messages align to the right */
+    .stChatMessage[data-testid="user-message"] {
+        margin-left: auto;
+        margin-right: 0;
+    }
+
+    /* Ensure assistant messages align to the left */
+    .stChatMessage[data-testid="assistant-message"] {
+        margin-left: 0;
+        margin-right: auto;
+    }
+
+    .stChatMessageContent {
+        margin-bottom: 70px;
+    }
+}
+
+/* Light theme adjustments */
+@media (max-width: 768px) and (prefers-color-scheme: light) {
+    body, .stApp {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    .stChatInputContainer {
+        background-color: #f0f0f0;
+        border: 1px solid #e0e0e0;
+    }
+
+    .stChatMessage {
+        background-color: #f5f5f5;
+    }
+}
+
+/* Dark theme adjustments */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+    body, .stApp {
+        background-color: #000000;
+        color: #ffffff;
+    }
+
+    .stChatInputContainer {
+        background-color: #1a1a1a;
+        border: 1px solid #333333;
+    }
+
+    .stChatMessage {
+        background-color: #1a1a1a;
     }
 }
 

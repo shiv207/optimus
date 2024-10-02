@@ -8,6 +8,8 @@ import tempfile
 import os
 import hashlib
 import base64  # Required for encoding images
+from PIL import Image
+import io
 
 # Replace with your actual keys
 API_KEY = "AIzaSyDHyK7T14VG8vMwaJhQicBRovAb76dkdxk"
@@ -15,6 +17,7 @@ SEARCH_ENGINE_ID = "d6604d6b7dbb9447a"
 GROQ_API_KEY = "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"
 
 groq_client = Groq(api_key=GROQ_API_KEY)
+
 
 def search_images(query, num_images=7):
     service = build("customsearch", "v1", developerKey=API_KEY)
@@ -95,7 +98,7 @@ def apply_custom_css():
         }
 
         .description-box {
-            background-color: var(--bg-color);
+            background-color: #ebebeb; /* 2% darker than #f0f0f0 */
             border-radius: 20px; /* 3px */
             padding: 0.375rem; /* 6px */
             margin-bottom: 0.375rem; /* 6px */
@@ -141,9 +144,37 @@ def apply_custom_css():
                 padding: 0.25rem; /* 4px */
             }
             .image-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.3rem;  /* 4.8px */
+                display: flex;
+                flex-direction: column;
+                gap: var(--gap-size);
+                align-items: center;
+                margin-top: 0.375rem; /* 6px */
             }
+            .image-container {
+                width: 100%;
+                padding-top: 75%;  /* Keeps the aspect ratio */
+                position: relative;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                margin-bottom: var(--gap-size);
+            }
+            .image-container img {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 10px;
+            }
+        }
+
+        .instagram-media {
+            max-width: 100% !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            margin: 0 !important;
         }
     </style>
     """
@@ -152,15 +183,17 @@ def apply_custom_css():
 def search_instagram_images(query, num_images=7):
     L = instaloader.Instaloader()
     posts = []
-    temp_dir = tempfile.mkdtemp()
     
     try:
         for post in instaloader.Hashtag.from_name(L.context, query).get_posts():
-            L.download_post(post, target=temp_dir)
-            image_files = [f for f in os.listdir(temp_dir) if f.endswith('.jpg') or f.endswith('.png')]
-            if image_files:
-                image_path = os.path.join(temp_dir, image_files[0])
-                posts.append(image_path)
+            if post.is_video:
+                continue
+            # Get the oEmbed data for the post
+            oembed_url = f"https://graph.facebook.com/v10.0/instagram_oembed?url={post.url}&access_token=d94715867ce26a832e87e8c1ac48fb58"
+            response = requests.get(oembed_url)
+            if response.status_code == 200:
+                oembed_data = response.json()
+                posts.append(oembed_data['html'])
             if len(posts) >= num_images:
                 break
     except Exception as e:
@@ -188,14 +221,6 @@ def handle_image_search_and_description(query: str, num_images=7, source='google
     
     return output
 
-def encode_image_to_base64(image_path):
-    """
-    Encodes an image file to a base64 string.
-    This is necessary for displaying local images in Streamlit using HTML.
-    """
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode('utf-8')
-
 def process_image_query(query: str, source='google'):
     result = handle_image_search_and_description(query, source=source)
     
@@ -211,26 +236,19 @@ def process_image_query(query: str, source='google'):
     if result['images']:
         unique_images = set()
         
-        # Custom CSS is already applied via apply_custom_css()
-        
-        # Create a 2x2 grid for images
+        # Create a container for images
         image_html = '<div class="image-grid">'
         for image in result['images']:
             if len(unique_images) >= 4:
                 break
-            # Create a unique identifier for the image
-            image_id = image if source == 'instagram' else hashlib.md5(image.encode()).hexdigest()
-            
-            if image_id not in unique_images:
-                unique_images.add(image_id)
-                # For Instagram images, encode the image to base64
-                if source == 'instagram':
-                    try:
-                        encoded_image = encode_image_to_base64(image)
-                        image_html += f'<div class="image-container"><img src="data:image/jpeg;base64,{encoded_image}" alt="Instagram Image"/></div>'
-                    except Exception as e:
-                        st.error(f"Error encoding image {image}: {e}")
-                else:
+            if source == 'instagram':
+                # For Instagram, use the oEmbed HTML
+                image_html += image
+            else:
+                # For Google, use the URL directly
+                image_id = hashlib.md5(image.encode()).hexdigest()
+                if image_id not in unique_images:
+                    unique_images.add(image_id)
                     image_html += f'<div class="image-container"><img src="{image}" alt="Google Image"/></div>'
         
         image_html += '</div>'
