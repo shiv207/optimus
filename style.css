@@ -460,6 +460,10 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
         font-size: 28px;
     }
 
+    .fixed-grid svg path {
+        stroke: #a5a5a5;
+    }
+
     .avatar-icon {
         width: 30px;
         height: 30px;

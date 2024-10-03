@@ -78,12 +78,24 @@ def apply_custom_css():
             --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             --gap-size: 12px; /* Define a CSS variable for gap size */
         }
+        
+        .description-box {
+            background-color: rgb(28, 28, 28);
+            color: #ffffff;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: 'Arial', sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
 
         @media (prefers-color-scheme: light) {
-            :root {
-                --bg-color: #f0f0f0;
-                --text-color: #000000;
-                --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            .description-box {
+                background-color: rgb(22,232,232);
+                color: #000000;
             }
         }
 
@@ -95,19 +107,6 @@ def apply_custom_css():
 
         .stChatMessage {
             color: var(--text-color);
-        }
-
-        .description-box {
-            background-color: #ebebeb; /* 2% darker than #f0f0f0 */
-            border-radius: 20px; /* 3px */
-            padding: 0.375rem; /* 6px */
-            margin-bottom: 0.375rem; /* 6px */
-            color: var(--text-color);
-            font-family: 'Arial', sans-serif;
-            font-size: 1rem; /* 16px */
-            line-height: 1.6;
-            letter-spacing: 0.3px;
-            box-shadow: var(--box-shadow);
         }
 
         .image-grid {
