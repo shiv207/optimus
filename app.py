@@ -413,7 +413,7 @@ def streamlit_ui():
                 position: absolute;  /* Make it fixed in the parent container */
                 left: 5px;  
                 bottom: -6px;  /* Adjust this to position it slightly above the bottom if necessary */
-                animation: pulse 2s infinite;
+                animation: pulse 3s infinite;
             }
 
             @keyframes pulse {
