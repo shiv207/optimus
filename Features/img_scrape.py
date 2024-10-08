@@ -80,7 +80,7 @@ def apply_custom_css():
         }
         
         .description-box {
-            background-color: rgb(28, 28, 28);
+            background: linear-gradient(to right, #1c1c1c, #1f1e1f,#242323);
             color: #ffffff;
             border-radius: 20px;
             padding: 15px;
