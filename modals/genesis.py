@@ -90,7 +90,7 @@ def function_call(prompt):
         'function call name exactly as listed.'
     )
     function_prompt = f"{function_sys_msg}\n\nUser prompt: {prompt}"
-    response = generate(prompt=function_prompt, model="gpt4", stream=False)
+    response = generate(prompt=function_prompt, model="mistrallarge", stream=False)
     return {"function": response.strip() if response else "None", "parameters": {}}
 
 if __name__ == '__main__':

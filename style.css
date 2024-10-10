@@ -512,10 +512,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 
     .header-container {
-        background-color: transparent !important;
-        backdrop-filter: none !important;
-        box-shadow: none !important;
-        transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        background-color: transparent
     }
 
     .header-content h1 {
@@ -636,7 +633,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 }
 
-/* Sidebar Styles with Animation */
+/* Sidebar Styles with Faster Animation */
 [data-testid="stSidebar"] {
     width: 100% !important;
     height: auto !important;
@@ -644,7 +641,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     top: 0;
     left: 0;
     transform: translateY(-100%);
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Reduced from 0.5s to 0.3s */
     background-color: rgba(0, 0, 0, 0.9);
     backdrop-filter: blur(10px);
     z-index: 999999;
@@ -661,8 +658,8 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 [data-testid="stSidebar"] > div {
     opacity: 0;
     transform: translateY(-20px);
-    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-    transition-delay: 0.2s;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out; /* Reduced from 0.5s to 0.2s */
+    transition-delay: 0.1s; /* Reduced from 0.2s to 0.1s */
 }
 
 [data-testid="stSidebar"][aria-expanded="true"] > div {
@@ -674,7 +671,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 [data-testid="stSidebar"] .sidebar-content > * {
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out; /* Reduced from 0.3s to 0.2s */
 }
 
 [data-testid="stSidebar"][aria-expanded="true"] .sidebar-content > * {
@@ -682,13 +679,11 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     transform: translateY(0);
 }
 
-
-
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(1) { transition-delay: 0.3s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(2) { transition-delay: 0.4s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(3) { transition-delay: 0.5s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(4) { transition-delay: 0.6s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(5) { transition-delay: 0.7s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(1) { transition-delay: 0.15s; } /* Reduced delays */
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(2) { transition-delay: 0.2s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(3) { transition-delay: 0.25s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(4) { transition-delay: 0.3s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(5) { transition-delay: 0.35s; }
 
 /* Sidebar toggle button animation */
 .sidebar-toggle {
@@ -701,7 +696,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     color: white;
     font-size: 24px;
     cursor: pointer;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease; /* Reduced from 0.3s to 0.2s */
 }
 
 .sidebar-toggle:hover {
@@ -715,7 +710,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 /* Adjust main content to account for top-down sidebar */
 .main .block-container {
     padding-top: 70px;
-    transition: padding-top 0.5s ease;
+    transition: padding-top 0.3s ease; /* Reduced from 0.5s to 0.3s */
 }
 
 [data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
