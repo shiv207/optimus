@@ -98,6 +98,8 @@ def streamlit_ui():
     st.cache_resource.clear()
     st.cache_data.clear()
 
+    add_fixed_grid()
+
     # Hide Streamlit's default elements
     hide_st_style = """
         <style>
@@ -306,9 +308,6 @@ def streamlit_ui():
         options=model_options,
         index=0,  # Set "Optimus" as default
     )
-
-    # Add the fixed grid
-    add_fixed_grid()
 
     # Load external CSS
     st.markdown(load_css('style.css'), unsafe_allow_html=True)

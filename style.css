@@ -505,22 +505,44 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 }
 
 
-/* Responsive Design */
+/* IOS Design */
 @media (max-width: 768px) {
     body, .stApp {
         font-size: 16px;
     }
 
     .header-container {
-        background-color: transparent
+        background-color: transparent;
+        position: fixed;
+        top: 20px; /* Reduced from default to move header up */
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+
+    .header-content {
+        padding-top: 5px; /* Reduced padding to move content up */
+        padding-bottom: 5px;
     }
 
     .header-content h1 {
         font-size: 28px;
+        margin-top: 0; /* Remove top margin to move text up */
+    }
+
+    .fixed-grid {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 103px;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
     }
 
     .fixed-grid svg path {
-        stroke: #a5a5a5;
+        stroke: #ffffff;
     }
 
     .avatar-icon {
@@ -549,19 +571,17 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 
     .stChatMessage {
-        max-width: 90%; /* Increased from 75% to 90% */
+        max-width: 90%;
         padding: 12px;
         margin-bottom: 15px;
         border-radius: 15px;
     }
 
-    /* Ensure user messages align to the right */
     .stChatMessage[data-testid="user-message"] {
         margin-left: auto;
         margin-right: 0;
     }
 
-    /* Ensure assistant messages align to the left */
     .stChatMessage[data-testid="assistant-message"] {
         margin-left: 0;
         margin-right: auto;
@@ -570,6 +590,11 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     .stChatMessageContent {
         margin-bottom: 70px;
     }
+
+    /* Adjust main content to account for higher header */
+    .main .block-container {
+        padding-top: 60px; /* Reduced to account for higher header */
+    }
 }
 
 /* Light theme adjustments */
@@ -577,6 +602,10 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     body, .stApp {
         background-color: #ffffff;
         color: #000000;
+    }
+
+    .fixed-grid svg path {
+        stroke: #000000;
     }
 
     .stChatInputContainer {
@@ -1134,3 +1163,4 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
         text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
     }
 }
+
