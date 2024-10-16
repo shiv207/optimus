@@ -7,7 +7,7 @@ import os
 import json
 
 API_URL = "https://api-inference.huggingface.co/models/bingbangboom/flux_oilscape"
-headers = {"Authorization": "Bearer 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"}
+headers = {"Authorization": "Bearer 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"}
 
 def query(payload):
 	response = requests.post(API_URL, headers=headers, json=payload)
