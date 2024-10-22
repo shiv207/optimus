@@ -13,7 +13,7 @@ from Features.flux_oilscape import generate_image_oilscape
 from Features.grid import add_fixed_grid
 import random
 from modals.optimus import groq_prompt_stream, function_call as groq_function_call
-from modals.genesis import genesis_prompt, function_call as genesis_function_call
+from modals.genesis import genesis_prompt_stream, genesis_function_call
 import base64
 
 # Initialize API clients
@@ -267,8 +267,28 @@ def streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
     
+    # Add CSS for animated select box
+    st.markdown("""
+    <style>
+    .stSelectbox {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stSelectbox:hover {
+        transform: scale(1.05); /* Slightly enlarge the select box on hover */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+    }
+
+    .stSelectbox:focus {
+        outline: none; /* Remove default outline */
+        border: 2px solid #26D0CE; /* Change border color on focus */
+        box-shadow: 0 0 5px rgba(38, 208, 206, 0.5); /* Add glow effect */
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # Sidebar title
-    st.sidebar.markdown('<h2 class="sidebar-title">Pick Your Fighter!</h2>', unsafe_allow_html=True)
+    st.sidebar.markdown('<h1 class="sidebar-title">Pick Your Fighter!</h1>', unsafe_allow_html=True)
 
     # Model cards in sidebar
     with st.sidebar:
@@ -283,19 +303,19 @@ def streamlit_ui():
                         <p><strong>Specialties:</strong> Factual analysis, Efficient processing</p>
                     </div>
                     <div class="model-meta">
-                        <span>PUNK</span> | <span>8 Oct 2023</span>
+                        <span>PUNK</span> | <span>22 Oct 2023</span>
                     </div>
                 </div>
                 <div class="model-card">
                     <h3 class="model-name">Genesis</h3>
                     <div class="model-description">
-                        <p><strong>Architecture:</strong> GPT-4</p>
+                        <p><strong>Architecture:</strong> MIXTERAL</p>
                         <p><strong>Capabilities:</strong> Multimodal</p>
                         <p><strong>Latency:</strong> Instant Reaction (50ms)</p>
                         <p><strong>Specialties:</strong> Creative tasks, Deep reasoning</p>
                     </div>
                     <div class="model-meta">
-                        <span>PUNK</span> | <span>8 Oct 2023</span>
+                        <span>PUNK</span> | <span>22 Oct 2023</span>
                     </div>
                 </div>
             </div>
@@ -429,8 +449,13 @@ def streamlit_ui():
                             message_placeholder.markdown(response + "▌")
                         message_placeholder.markdown(response)
                     else:  # Genesis
-                        response = genesis_prompt(prompt=prompt)
-                        st.write(response)
+                        response_generator = genesis_prompt_stream(prompt)  # Call without history
+                        response = ""
+                        message_placeholder = st.empty()
+                        for chunk in response_generator:
+                            response += chunk
+                            message_placeholder.markdown(response + "▌")
+                        message_placeholder.markdown(response)
                     
                     # Remove loading animation and display response
                     loading_placeholder.empty()
@@ -450,3 +475,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

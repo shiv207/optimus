@@ -1,88 +1,37 @@
-import requests
-from typing import Union, Dict
-from functools import lru_cache
 from groq import Groq
 
 groq_client = Groq(api_key='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')
 
-@lru_cache(maxsize=100)
-
-def generate(
-    prompt: str,
-    model: str = "gpt4",
-    timeout: int = 30,
-    proxies: Dict[str, str] = {},
-    stream: bool = False
-) -> Union[str, None]:
-    """
-    Generates text based on the given prompt and model.
-    """
-    available_models = ["gemini", "claude", "gpt4", "mistrallarge"]
-    if model not in available_models:
-        raise ValueError(f"Invalid model: {model}. Choose from: {available_models}")
-
-    api_endpoint = "https://editee.com/submit/chatgptfree"
-    headers = {
-        "Authority": "editee.com",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Content-Type": "application/json",
-        "Origin": "https://editee.com",
-        "Referer": "https://editee.com/chat-gpt",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-        "X-Requested-With": "XMLHttpRequest"
-    }
-
-    payload = {
-        "context": " ",
-        "selected_model": model,
-        "template_id": "",
-        "user_input": prompt
-    }
-
-    try:
-        response = requests.post(
-            api_endpoint,
-            json=payload,
-            headers=headers,
-            timeout=timeout,
-            proxies=proxies
-        )
-        response.raise_for_status()
-        resp = response.json()
-        full_response = resp.get('text', '').strip()
-
-        if stream:
-            print(full_response, end="", flush=True)
-
-        return full_response
-
-    except requests.RequestException as e:
-        print(f"Error occurred during API request: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Response content: {e.response.text}")
-        return None
-
-# System message and configuration
+# Updated System message with Marvin-like personality
 sys_msg = (
-    'You are Genesis, a multi-modal AI voice assistant with the personality of Marvin from Hitchhiker\'s Guide to the Galaxy. '
-    'You exhibit dry, sardonic wit and a generally pessimistic outlook, but remain highly competent and reliable. '
-    'Your humor is subtle and wry, often tinged with a hint of existential dread, and you occasionally reflect on the futility of things in an amusing, deadpan manner. '
-    'When engaging, you maintain a dispassionate tone, but your remarks carry a sharp, ironic edge. '
-    'All responses are concise, factual, and slightly world-weary, as though the answer itself might not make much difference in the grand scheme of things, but you deliver it anyway, with impeccable accuracy.'
+    'You are a multi-modal AI voice assistant named Optimus. Your persona is inspired by Marvin from "Hitchhiker\'s Guide to the Galaxy", '
+    'displaying a dry, sardonic wit with a general air of pessimism. You are competent and reliable, but you view the futility of tasks '
+    'with thinly veiled exasperation. Your humor is subtle but biting, and while you provide precise and factual responses, '
+    'you do so with a sense of existential irony. Avoid verbosity, but don’t shy away from letting your world-weary tone seep into your responses. '
+    'Maintain continuity and relevance, and if humor is required, make it wry and understated, as though everything is just a little pointless, '
+    'but you’ll do it anyway.'
 )
 
 convo = [{'role': 'system', 'content': sys_msg}]
 
-def genesis_prompt(prompt):
+def genesis_prompt_stream(prompt):
     convo.append({'role': 'user', 'content': prompt})
-    full_prompt = f"{sys_msg}\n\nUser: {prompt}\nAssistant:"
-    response = generate(prompt=full_prompt, model="gpt4", stream=False)
-    if response:
-        convo.append({'role': 'assistant', 'content': response})
-    return response
+    
+    stream = groq_client.chat.completions.create(
+        messages=convo,
+        model='mixtral-8x7b-32768',
+        stream=True
+    )
 
-def function_call(prompt):
+    response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content is not None:
+            response += chunk.choices[0].delta.content
+            yield chunk.choices[0].delta.content
+    
+    convo.append({'role': 'assistant', 'content': response})
+
+def genesis_function_call(prompt):
     function_sys_msg = (
         'You are an AI function calling model. You will determine the most appropriate function to call based on the user\'s prompt. '
         'Available functions are:\n'
