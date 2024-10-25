@@ -20,7 +20,7 @@ import base64
 wake_word = 'optimus'
 groq_client = Groq(api_key='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')
 
-st.set_page_config(page_title="Optimus", layout="wide", page_icon="Images/avatar/optimus.png", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Optimus", layout="wide", page_icon="Images/avatar/optimus_light.png", initial_sidebar_state="collapsed")
 
 def generate_image(prompt):
 
