@@ -21,13 +21,14 @@ def genesis_prompt_stream(prompt):
         stream=True
     )
 
-    response = ""
+    response_chunks = []
     for chunk in stream:
         if chunk.choices[0].delta.content is not None:
-            response += chunk.choices[0].delta.content
-            yield chunk.choices[0].delta.content
+            response_chunks.append(chunk.choices[0].delta.content)
     
+    response = ''.join(response_chunks)
     convo.append({'role': 'assistant', 'content': response})
+    return response  # Returning the full response for better usability
 
 def genesis_function_call(prompt):
     function_sys_msg = (
@@ -47,7 +48,4 @@ def genesis_function_call(prompt):
     chat_completion = groq_client.chat.completions.create(messages=function_convo, model='Llama3-70b-8192')
     response = chat_completion.choices[0].message.content.strip()  # Access content directly
 
-    if not response:
-        return {"function": "None", "parameters": {}}
-
-    return {"function": response, "parameters": {}}
+    return {"function": response or "None", "parameters": {}}
