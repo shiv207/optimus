@@ -1,11 +1,9 @@
 import logging
 from deepgram import DeepgramClient, SpeakOptions
 import streamlit as st
+import os
+import tempfile
 import base64
-import asyncio
-
-# Initialize logging
-logging.basicConfig(level=logging.INFO)
 
 def text_to_speech_deepgram(text: str):
     API_KEY = "3956c457b60662f248076b00820080a8b72b1fbf"
@@ -14,33 +12,32 @@ def text_to_speech_deepgram(text: str):
         client = DeepgramClient(api_key=API_KEY)
         options = SpeakOptions(
             model="aura-stella-en",
-            encoding="linear16",  # Consider changing to a lower encoding for speed
+            encoding="linear16",
             container="wav",
-            sample_rate=24000  # Lower sample rate for faster processing
+            sample_rate=48000
         )
 
-        SPEAK_OPTIONS = {"text": text}
+        # Save audio to temporary file and stream audio back immediately
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+            temp_filename = temp_file.name
+            client.speak.v("1").save(temp_filename, {"text": text}, options)
 
-        # Instead of saving to a file, stream the audio directly
-        response = client.speak.v("1").send(SPEAK_OPTIONS, options)
-        audio_data = response.audio  # Assuming this gets you the audio data directly
-
-        logging.info("Successfully generated speech")
-        return audio_data  # Return audio data directly
+        logging.info("Successfully generated speech to temporary file")
+        return temp_filename  # Return path directly for quicker access
         
     except Exception as e:
         logging.error(f"Failed to convert text to speech using Deepgram: {e}")
         return None
 
 def say(text: str):
-    audio_data = text_to_speech_deepgram(text)
+    audio_file = text_to_speech_deepgram(text)
     
-    if audio_data:
+    if audio_file and os.path.exists(audio_file):
         try:
-            # Encode the audio bytes to base64
-            audio_base64 = base64.b64encode(audio_data).decode()
+            # Stream the audio back in base64 format
+            with open(audio_file, "rb") as file:
+                audio_base64 = base64.b64encode(file.read()).decode()
             
-            # Create an HTML audio element with autoplay
             audio_html = f'''
                 <audio autoplay="true">
                     <source src="data:audio/wav;base64,{audio_base64}" type="audio/wav">
@@ -48,11 +45,12 @@ def say(text: str):
                 </audio>
             '''
             
-            # Display the audio using HTML
             st.markdown(audio_html, unsafe_allow_html=True)
+            logging.info("Successfully streamed audio from temporary file")
+
+            os.unlink(audio_file)  # Clean up immediately for lower latency
             
-            logging.info("Successfully streamed audio")
         except Exception as e:
             logging.error(f"Failed to stream audio: {e}")
     else:
-        logging.error("No audio data generated to stream")
+        logging.error("No audio file generated to stream")
