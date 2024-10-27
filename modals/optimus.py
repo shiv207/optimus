@@ -51,7 +51,7 @@ def function_call(prompt):
         'You are an AI function calling model. You will determine the most appropriate function to call based on the user\'s prompt. '
         'Available functions are:\n'
         '1. "generate_image": For requests to generate an image, create artwork, or produce visual content.\n'
-        '2. "search_images": For requests to search the internet.\n'
+        '2. "search_images": For requests to search for existing images or pictures.\n'
         '3. "None": For general conversation or tasks not related to the above functions.\n'
         'Respond with only one selection from this list: ["generate_image", "search_images", "None"].\n'
         'Do not respond with anything but the most logical selection from that list with no explanations. Format the '
