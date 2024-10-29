@@ -115,6 +115,10 @@ footer {visibility: hidden;}
     background-color: rgba(23, 23, 23, 0.778) !important;
 }
 
+.stChatMessage[data-testid="chatAvatarIcon-user"] {
+    background-image: url(Backend/avatar/punk.png);
+}
+
 .stChatMessage[data-testid="user-message"] {
     background-color: #393939 !important;
     color: #ffffffd2;

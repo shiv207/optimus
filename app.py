@@ -48,6 +48,7 @@ def generate_image(prompt):
     except Exception as e:
         return f"Error: Failed to generate image. {str(e)}"
 
+@st.cache_data  # Caching the function to improve performance
 def load_css(file_name):
     with open(file_name) as f:
         return f'<style>{f.read()}</style>'
@@ -76,6 +77,7 @@ def parse_groq_stream(stream):
                 yield chunk.choices[0].delta.content
     return response
 
+@st.cache_data  # Caching the function to improve performance
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
         data = f.read()
@@ -371,7 +373,19 @@ def streamlit_ui():
     # Handle user input when a prompt is entered
     if prompt:
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
+
+        # List of available avatars
+        avatars = [
+            "Backend/avatar/brain.png",
+            "Backend/avatar/earth.png",
+            "Backend/avatar/mars.png",
+            "Backend/avatar/punk.png"
+        ]
+
+        # Choose a random avatar
+        selected_avatar = random.choice(avatars)
+
+        with st.chat_message("user", avatar=selected_avatar):  # Use the randomly selected avatar
             st.markdown(prompt)
         
         # Add ChatGPT-style loading animation
