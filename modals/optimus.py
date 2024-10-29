@@ -22,7 +22,7 @@ convo = [{'role': 'system', 'content': sys_msg_casual}]
 def groq_prompt_stream(prompt):
     # Determine if the prompt is casual or factual
     is_factual = any(keyword in prompt.lower() for keyword in 
-                     ['write', 'explain', 'describe', 'how to', 'what is', 'who is', 'list', 'define'])
+                     ['write', 'explain', 'describe', 'how to', 'what is', 'who is', 'list', 'define','review'])
 
     # Switch system message based on query type
     if is_factual:
