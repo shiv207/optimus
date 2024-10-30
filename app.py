@@ -374,18 +374,7 @@ def streamlit_ui():
     if prompt:
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # List of available avatars
-        avatars = [
-            "Backend/avatar/brain.png",
-            "Backend/avatar/earth.png",
-            "Backend/avatar/mars.png",
-            "Backend/avatar/punk.png"
-        ]
-
-        # Choose a random avatar
-        selected_avatar = random.choice(avatars)
-
-        with st.chat_message("user", avatar=selected_avatar):  # Use the randomly selected avatar
+        with st.chat_message("user", avatar='Backend/avatar/mars.png'):  # Use the randomly selected avatar
             st.markdown(prompt)
         
         # Add ChatGPT-style loading animation
