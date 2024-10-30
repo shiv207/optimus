@@ -97,8 +97,6 @@ def set_png_as_page_bg(png_file):
 
 
 def streamlit_ui():
-    st.cache_resource.clear()
-    st.cache_data.clear()
 
     add_fixed_grid()
 
