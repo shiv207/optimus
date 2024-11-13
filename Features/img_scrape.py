@@ -10,11 +10,13 @@ import hashlib
 import base64  # Required for encoding images
 from PIL import Image
 import io
+import dotenv
 
-# Replace with your actual keys
-API_KEY = "AIzaSyDHyK7T14VG8vMwaJhQicBRovAb76dkdxk"
-SEARCH_ENGINE_ID = "d6604d6b7dbb9447a"
-GROQ_API_KEY = "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"
+dotenv.load_dotenv()
+
+API_KEY = os.getenv("GOOGLE_API_KEY")
+SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 
@@ -44,7 +46,7 @@ def get_brief_description(query):
     
     try:
         response = groq_client.chat.completions.create(
-            model="mixtral-8x7b-32768",
+            model="mixtral-8x7b-32768", # choose any models you want
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that provides brief descriptions."},
                 {"role": "user", "content": prompt}
