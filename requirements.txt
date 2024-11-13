@@ -4,7 +4,7 @@ google_api_python_client==2.146.0
 groq==0.12.0
 instaloader==4.13.1
 openai_unofficial==0.1.2
-Pillow==11.0.0
+Pillow==7.1.0
 python-dotenv==1.0.1
 Requests==2.32.3
 streamlit==1.37.1
