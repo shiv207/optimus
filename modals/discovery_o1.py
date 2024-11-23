@@ -94,6 +94,9 @@ class Perplexity:
             if not response_data:
                 raise ValueError("Empty response received from server")
             self.session_id: str = loads(response_data)["sid"]
+        except requests.exceptions.HTTPError as http_err:
+            logging.error(f"HTTP error occurred: {http_err} - Response: {response.text}")
+            raise ConnectionError("Failed to initialize session with Perplexity AI")
         except (requests.exceptions.RequestException, ValueError, KeyError) as e:
             logging.error(f"Failed to initialize session: {str(e)}")
             raise ConnectionError("Failed to initialize session with Perplexity AI")
