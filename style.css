@@ -3,8 +3,8 @@
 
 body {
     font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #000000;
-    color: #ffffff;
+    background-color: #f9f9f9;
+    color: #333;
     transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
@@ -27,7 +27,7 @@ footer {visibility: hidden;}
     font-family: 'Montserrat', sans-serif;
     font-size: 36px;
     font-weight: 700;
-    color: #ffffff;
+    color: #4a4a4a;
     margin: 0;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -69,11 +69,6 @@ footer {visibility: hidden;}
     100% { opacity: 1; }
 }
 
-/* Add a class to trigger the strobe effect */
-.strobe-active h1 {
-    animation: strobe 0.1s steps(2, start) infinite;
-}
-
 /* Dark Theme Header */
 .header-content.strobe-active h1 {
     text-shadow: 0 0 25px rgba(255, 255, 255, 0.9), 0 0 30px rgba(255, 255, 255, 0.7);
@@ -87,7 +82,7 @@ footer {visibility: hidden;}
     font-weight: bold;
     color: #ffffff;
     margin: 0;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
     animation: strobe 2s infinite ease-in-out;
 }
 
@@ -102,7 +97,7 @@ footer {visibility: hidden;}
 
 .stImage:hover {
     transform: scale(1.03);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 12px rgba(23, 23, 23, 0.944);
 }
 
 /* Chat Area Styles */
@@ -112,19 +107,21 @@ footer {visibility: hidden;}
     margin-bottom: 20px;
     max-width: 75%;
     transition: transform 0.3s ease;
-    background-color: rgba(23, 23, 23, 0.778) !important;
+    border: 1px solid rgba(36, 36, 36, 0.401) !important;
+    color: #ffffff;
+    backdrop-filter: blur(4px);
 }
 
 .stChatMessage[data-testid="user-message"] {
-    background-color: #393939 !important;
-    color: #ffffffd2;
+    background-color: rgba(2, 0, 14, 0.95) !important;
+    color: #ffffff;
     margin-left: auto;
     text-align: right;
     border-color: #777777;
     border-width: 2px;
     border-radius: 20px;
-    border: 1px solid #000000 !important;
-    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    backdrop-filter: blur(5px);
 }
 
 .stChatMessage .message {
@@ -139,18 +136,26 @@ footer {visibility: hidden;}
 }
 
 .stChatMessage .message strong {
-    color: #1e88e5;
     font-weight: 600;
 }
 
 .stChatMessage[data-testid="assistant-message"] {
-    background-color: #141414 !important;
+    background-color: rgba(0, 0, 0, 0.75) !important;
     color: #ffffff;
+    backdrop-filter: blur(5px);
 }
 
 .stChatMessage:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.525);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+    background-color: rgba(30, 30, 30, 0.98) !important;
+}
+
+/* Override hover effects for assistant messages */
+.stChatMessage[data-testid="assistant-message"]:hover {
+    background-color: rgba(0, 0, 0, 0.85) !important;
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
 }
 
 /* Avatar Styles */
@@ -159,10 +164,6 @@ footer {visibility: hidden;}
     height: 45px !important;
     border-radius: 50%;
     overflow: hidden;
-}
-
-.st-emotion-cache-qdbtli {
-    background-color: #000000;
 }
 
 .stChatMessage .stAvatar img {
@@ -209,19 +210,19 @@ h1 {
 }
 
 .stChatInputContainer {
-    background-color: #000000 !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 20px !important;
-    padding: 10px 15px !important;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 10px 15px;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 .stChatInputContainer input {
-    background-color: #000000 !important;
-    color: white !important;
-    border: none !important;
+    background-color: #f0f0f0;
+    color: #555;
+    border: none;
     outline: none;
     flex-grow: 1;
     font-size: 16px;
@@ -235,9 +236,9 @@ h1 {
 
 /* Style the send button */
 .stChatInputContainer button {
-    background-color: transparent !important;
-    color: white !important;
-    border: none !important;
+    background-color: #ffcc80;
+    color: #fff;
+    border: none;
     padding: 5px;
     cursor: pointer;
 }
@@ -266,7 +267,7 @@ div[data-testid="stChatInput"] {
 
 div[data-testid="stChatInput"] {
     border-radius: 50px;
-    background-color: rgba(25, 25, 25, 0.746);
+    background-color: rgba(25, 25, 25, 0.947);
 }
 
 div[data-testid="stChatInputTextArea"] {
@@ -279,6 +280,17 @@ div[data-baseweb="textarea"] {
     border-radius: 50px;
 }
 
+div[data-testid="stBottomBlockContainer"] {
+    background-color: transparent;
+}
+
+div[data-class="st-emotion-cache-vj1c9o ea3mdgi6"] {
+    background-color: transparent;
+}
+
+.st-emotion-cache-vj1c9o.ea3mdgi6 {
+    background-color: transparent;
+}
 /* New rule to adjust button position */
 div[data-testid="stChatInput"] button {
     position: absolute;
@@ -301,29 +313,30 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 /* Light Theme */
 @media (prefers-color-scheme: light) {
     body {
-        background-color: #ffffff;
-        color: #000000;
+        background-color: rgb(241, 240, 238);  /* Lighter background matching image */
+        color: #2D3748;  /* Darker gray for better readability */
     }
 
     .stApp {
-        background-color: #ffffff;
+        background-color: rgb(241, 240, 238);
     }
 
-    .st-emotion-cache-qdbtli {
-        background-color: #ffffff;
+    .st-emotion-cache-qdbtli.ea3mdgi2 {
+        background-color: transparent;
     }
-
-    /* Grid SVG */
+    .st-emotion-cache-uhkwx6.ea3mdgi6 {
+        background-color: transparent;
+    }
+    
     .fixed-grid svg path {
-        stroke: #000000;
+        opacity: 0.2;
+        stroke: rgb(82, 82, 82);
     }
 
-    /* Header Styles */
     .header-content h1 {
-        color: #000000;
-        text-shadow: none;
-        position: relative;
-        z-index: 1;
+        color: #2D3748 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 600;
     }
 
     .header-content h1::before {
@@ -363,33 +376,31 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 
     /* Chat Area Styles */
     .stChatMessage {
-        background-color: #f0f0f0 !important;
-        color: #000000;
+        background-color: rgba(246, 246, 246, 0.826) !important;  /* Very light gray-blue */
+        color: #2D3748 !important;
+        border: 1px solid rgb(226, 226, 226) !important;  /* Subtle border */
     }
 
     div[data-testid="stChatInput"] {
         border-radius: 50px;
-        background-color: rgba(237, 237, 237, 0.964);
-    }
-
-    .stChatMessage[data-testid="user-message"] {
-        background-color: #e0e0e0 !important;
-        color: #000000;
-        border: 1px solid #000000 !important;
+        border: 1px solid rgba(190, 190, 185, 0.754);
+        background-color: rgb(255, 255, 248);  /* Very light gray-blue */
     }
 
     .stChatMessage[data-testid="assistant-message"] {
-        background-color: #f5f5f5 !important;
-        color: #000000;
+        color: #2D3748 !important;
     }
 
     .stChatMessage .message {
-        color: #000000 !important;
+        color: #2D3748 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 0.95rem;
+        line-height: 1.5;
     }
 
     .stChatMessage:hover {
-        background-color: #d9d9d9 !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        background-color: #F7FAFC !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     /* Title Styles */
@@ -407,7 +418,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     .stChatInputContainer input {
         background-color: #ffffff !important;
         color: #000000 !important;
-        caret-color: #000000 !important; /* This makes the cursor black */
+        caret-color: #4A5568 !important;
     }
 
     .stChatInputContainer input::placeholder {
@@ -415,7 +426,8 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 
     .stChatInputContainer button {
-        color: #000000 !important;
+        color: #4A5568 !important;
+        background-color: #EDF2F7;
     }
 
     /* Ensure black cursor for textarea as well */
@@ -443,22 +455,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 
     /* Ensure chat messages have a white background */
     .stChatMessageContent {
-        background-color: #ffffff;
-    }
-
-    /* Adjust text color for better contrast */
-    .stChatMessage .message strong {
-        color: #0056b3;
-    }
-
-    /* Make spinner white in dark theme */
-    .stSpinner > div {
-        border-color: white transparent white transparent !important;
-    }
-
-    /* Make spinner barbie pink in light theme */
-    .stSpinner > div {
-        border-color: #6971ff transparent #FF69B4 transparent !important;
+        background-color: rgb(255, 255, 248);
     }
 
     /* Ensure the spinner is visible against any background */
@@ -505,63 +502,98 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 }
 
 
-/* Responsive Design */
+/* IOS Design */
 @media (max-width: 768px) {
     body, .stApp {
         font-size: 16px;
+        opacity: 0.95; /* Increased overall opacity for better visibility */
     }
 
     .header-container {
-        background-color: transparent
+        background-color: rgba(255, 255, 255, 0.9); /* Light background with increased opacity */
+        position: fixed;
+        top: 20px; /* Reduced from default to move header up */
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+
+    .header-content {
+        padding-top: 5px; /* Reduced padding to move content up */
+        padding-bottom: 5px;
     }
 
     .header-content h1 {
         font-size: 28px;
+        margin-top: 0; /* Remove top margin to move text up */
+        opacity: 1; /* Ensure header text is fully opaque */
+    }
+
+    /* Fixed Grid Layout */
+    .fixed-grid {
+        position: fixed; /* Ensure it stays at the bottom */
+        bottom: 0; /* Position it at the bottom */
+        height: 150px; /* Increased height for a bigger grid */
+        width: 100%; /* Full width for the grid */
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsive grid */
+        gap: 10px; /* Space between grid items */
+        padding: 10px; /* Padding around the grid */
+        opacity: 1;
+        z-index: 0;
+        pointer-events: auto; /* Allow interactions */
+        overflow: hidden; /* Hide overflow */
     }
 
     .fixed-grid svg path {
-        stroke: #a5a5a5;
+        stroke: #ffffff;
+        opacity: 0.8; /* Increased opacity for SVG paths */
     }
 
     .avatar-icon {
         width: 30px;
         height: 30px;
+        opacity: 1; /* Ensure avatar icons are fully opaque */
     }
 
-    .stImage>img {
+    .stImage > img {
+        object-fit: cover;
         width: 100%;
         height: auto;
-        border-radius: 10px;
+        max-height: 300px; 
+        opacity: 1; /* Ensure images are fully opaque */
     }
 
     .stChatFloatingInputContainer {
         padding: 10px;
         bottom: 10px;
+        background-color: rgba(255, 255, 255, 0.9); /* Increased opacity for input container */
     }
 
     .stChatInputContainer {
         padding: 8px 12px;
         border-radius: 20px;
+        background-color: rgba(255, 255, 255, 0.9); /* Increased opacity for input container */
     }
 
     .stChatInputContainer input {
         font-size: 14px;
+        opacity: 1; /* Ensure input fields are fully opaque */
     }
 
     .stChatMessage {
-        max-width: 90%; /* Increased from 75% to 90% */
+        max-width: 100%;
         padding: 12px;
         margin-bottom: 15px;
         border-radius: 15px;
+        background-color: rgba(255, 255, 255, 0.9); /* Increased opacity for chat messages */
     }
 
-    /* Ensure user messages align to the right */
     .stChatMessage[data-testid="user-message"] {
         margin-left: auto;
         margin-right: 0;
     }
 
-    /* Ensure assistant messages align to the left */
     .stChatMessage[data-testid="assistant-message"] {
         margin-left: 0;
         margin-right: auto;
@@ -570,22 +602,10 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     .stChatMessageContent {
         margin-bottom: 70px;
     }
-}
 
-/* Light theme adjustments */
-@media (max-width: 768px) and (prefers-color-scheme: light) {
-    body, .stApp {
-        background-color: #ffffff;
-        color: #000000;
-    }
-
-    .stChatInputContainer {
-        background-color: #f0f0f0;
-        border: 1px solid #e0e0e0;
-    }
-
-    .stChatMessage {
-        background-color: #f5f5f5;
+    /* Adjust main content to account for higher header */
+    .main .block-container {
+        padding-top: 60px; /* Reduced to account for higher header */
     }
 }
 
@@ -594,15 +614,16 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     body, .stApp {
         background-color: #000000;
         color: #ffffff;
+        opacity: 0.95; /* Increased opacity for dark mode */
     }
 
     .stChatInputContainer {
-        background-color: #1a1a1a;
+        background-color: rgba(26, 26, 26, 0.9); /* Increased opacity for dark mode input */
         border: 1px solid #333333;
     }
 
     .stChatMessage {
-        background-color: #1a1a1a;
+        background-color: rgba(26, 26, 26, 0.9); /* Increased opacity for dark mode chat messages */
     }
 }
 
@@ -633,7 +654,11 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 }
 
-/* Sidebar Styles with Animation */
+[data-testid=".st-emotion-cache-vj1c9o"] {
+    background-color: transparent;
+}
+
+/* Sidebar Styles with Faster Animation */
 [data-testid="stSidebar"] {
     width: 100% !important;
     height: auto !important;
@@ -641,7 +666,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     top: 0;
     left: 0;
     transform: translateY(-100%);
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; /* Reduced from 0.3s to 0.2s */
     background-color: rgba(0, 0, 0, 0.9);
     backdrop-filter: blur(10px);
     z-index: 999999;
@@ -658,8 +683,8 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 [data-testid="stSidebar"] > div {
     opacity: 0;
     transform: translateY(-20px);
-    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-    transition-delay: 0.2s;
+    transition: opacity 0.15s ease-out, transform 0.15s ease-out !important; /* Reduced from 0.2s to 0.15s */
+    transition-delay: 0.05s !important; /* Reduced from 0.1s to 0.05s */
 }
 
 [data-testid="stSidebar"][aria-expanded="true"] > div {
@@ -671,21 +696,15 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 [data-testid="stSidebar"] .sidebar-content > * {
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    transition: opacity 0.15s ease-out, transform 0.15s ease-out !important; /* Reduced from 0.2s to 0.15s */
 }
 
-[data-testid="stSidebar"][aria-expanded="true"] .sidebar-content > * {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-
-
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(1) { transition-delay: 0.3s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(2) { transition-delay: 0.4s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(3) { transition-delay: 0.5s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(4) { transition-delay: 0.6s; }
-[data-testid="stSidebar"] .sidebar-content > *:nth-child(5) { transition-delay: 0.7s; }
+/* Faster stagger delays */
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(1) { transition-delay: 0.08s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(2) { transition-delay: 0.12s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(3) { transition-delay: 0.16s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(4) { transition-delay: 0.20s; }
+[data-testid="stSidebar"] .sidebar-content > *:nth-child(5) { transition-delay: 0.24s; }
 
 /* Sidebar toggle button animation */
 .sidebar-toggle {
@@ -698,7 +717,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     color: white;
     font-size: 24px;
     cursor: pointer;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease; /* Reduced from 0.3s to 0.2s */
 }
 
 .sidebar-toggle:hover {
@@ -712,7 +731,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 /* Adjust main content to account for top-down sidebar */
 .main .block-container {
     padding-top: 70px;
-    transition: padding-top 0.5s ease;
+    transition: padding-top 0.3s ease; /* Reduced from 0.5s to 0.3s */
 }
 
 [data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
@@ -913,6 +932,10 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 }
 
+.header-title {
+    font-family: 'Montserrat', sans-serif;
+}
+
 /* Genesis Header Styles */
 .header-title.genesis {
     font-family: 'Montserrat', sans-serif;
@@ -1044,14 +1067,16 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #26D0CE, #1A2980);
+    background: linear-gradient(-135deg, #b89ccc,#7640cd,#382382,#2c2140,#201d26,#1e1e20,#1e1433,#23093d,#310a6c,);
     backdrop-filter: blur(60px);
     background-size: cover;
     background-blend-mode: soft-light;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
-
+.st-az {
+    background-color: rgb(255, 255, 255) !important;
+}
 .model-card:hover::before {
     opacity: 0.9;
 }
@@ -1136,3 +1161,281 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
         text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
     }
 }
+
+/* Search Results Styling */
+.response-container {
+    background-color: rgba(30, 30, 30, 0.8);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 10px 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-result {
+    line-height: 1.6;
+    font-size: 16px;
+    color: #FFFFFF;
+}
+
+.citation {
+    font-size: 12px;
+    color: #888;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error {
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+/* Image Grid Styling */
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.image-grid img {
+    border-radius: 8px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.image-grid img:hover {
+    transform: scale(1.05);
+}
+
+/* Smooth Transitions */
+* {
+    transition: all 0.3s ease;
+}
+
+/* iOS Optimizations */
+@media (max-width: 768px) {
+    @supports (-webkit-touch-callout: none) {
+        .sidebar .sidebar-content {
+            -webkit-overflow-scrolling: touch;
+            height: 100vh;
+            padding: 10px;
+        }
+
+        .model-card {
+            padding: 15px;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+        }
+
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+    }
+
+    /* Core Mobile Adjustments */
+    .model-name { font-size: 16px; }
+    .model-description { font-size: 12px; }
+    .sidebar-header h2 { font-size: 1.2rem; }
+    
+    .stRadio > div {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 4px !important;  
+        background: rgba(0, 0, 0, 0.7) !important;
+        padding: 2px 4px !important;  
+        width: 280px !important;  
+        margin: 0 auto !important;
+        margin-left: -10px !important;
+        backdrop-filter: blur(6px);  
+        -webkit-backdrop-filter: blur(6px);
+        box-shadow: 0 0 15px rgba(138, 43, 226, 0.1);
+    }    
+
+    .stRadio > div > label {
+        position: relative;
+        padding: 6px 16px !important;  
+        cursor: pointer;
+        font-size: 12px;  
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50px; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        flex: 1 !important;
+        margin: 0 !important;
+        min-width: 100px !important;  
+        text-align: center;
+        letter-spacing: 0.5px;  
+        text-transform: uppercase;
+    }
+
+    .stRadio > div > label[data-selected="true"] {
+        background: transparent;
+        color: rgb(255, 255, 255);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.1),
+                    0 0 10px rgba(138, 43, 226, 0.2);
+        text-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+    }
+
+    .stRadio > div > label:not([data-selected="true"]):hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 8px rgba(138, 43, 226, 0.1);
+    }
+
+    .stRadio > div > label::before {
+        display: none !important;
+    }
+
+    .stRadio input[type="radio"] {
+        display: none !important;
+    }
+
+    .stRadio > div > label span {
+        letter-spacing: 0.5px; 
+    }
+
+    /* Light Theme */
+    @media (prefers-color-scheme: light) {
+        .stRadio > div {
+            background: rgba(255, 255, 255, 0.9) !important;  /* Light background */
+            border: 1px solid rgba(0, 0, 0, 0.15);  /* Dark border */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);  /* Dark shadow */
+        }
+
+        .stRadio > div > label {
+            color: rgba(0, 0, 0, 0.8);  /* Dark text */
+            border: 1px solid rgba(0, 0, 0, 0.1);  /* Dark border */
+        }
+
+        .stRadio > div > label[data-selected="true"] {
+            color: rgb(0, 0, 0);  /* Dark text for selected */
+            border: 1px solid rgba(0, 0, 0, 0.3);  /* Dark border for selected */
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1),
+                        0 0 10px rgba(138, 43, 226, 0.2);
+            text-shadow: none;  /* Remove text shadow */
+        }
+
+        .stRadio > div > label:not([data-selected="true"]):hover {
+            background: rgba(0, 0, 0, 0.05);  /* Dark hover effect */
+            color: rgba(0, 0, 0, 0.9);  /* Dark hover text */
+        }
+    }
+}
+
+.sidebar-header h2 {
+    font-size: 1.6rem;
+    margin-left: 0.3cm;
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1);
+    transition: text-shadow 0.3s ease;
+}
+
+.sidebar-header h2:hover {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.4), 0 0 30px rgba(255, 255, 255, 0.3), 0 0 45px rgba(255, 255, 255, 0.2);
+}
+
+/* Light Theme */
+@media (prefers-color-scheme: light) {
+    .stRadio > div {
+        background: rgba(255, 255, 255, 0.9) !important;  /* Light background */
+        border: 1px solid rgba(0, 0, 0, 0.15);  /* Dark border */
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);  /* Dark shadow */
+    }
+
+    .stRadio > div > label {
+        color: rgba(0, 0, 0, 0.8);  /* Dark text */
+        border: 1px solid rgba(0, 0, 0, 0.1);  /* Dark border */
+    }
+
+    .stRadio > div > label[data-selected="true"] {
+        color: rgb(0, 0, 0);  /* Dark text for selected */
+        border: 1px solid rgba(0, 0, 0, 0.3);  /* Dark border for selected */
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1),
+                    0 0 15px rgba(138, 43, 226, 0.2);
+        text-shadow: none;  /* Remove text shadow */
+    }
+
+    .stRadio > div > label:not([data-selected="true"]):hover {
+        background: rgba(0, 0, 0, 0.05);  /* Dark hover effect */
+        color: rgba(0, 0, 0, 0.9);  /* Dark hover text */
+    }
+
+    .sidebar-header h2 {
+        color: #000000;  /* Dark text for header */
+        text-shadow: none;  /* Remove text shadow */
+    }
+}
+
+/* Table Styles within Chat Messages */
+.stChatMessage table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 14px;
+    background: rgba(9, 9, 9, 0.3);
+    border-radius: 9px;
+    overflow: hidden;
+}
+
+.stChatMessage table th,
+.stChatMessage table td {
+    padding: 8px 12px;
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: normal; /* Allow text wrapping */
+    word-wrap: break-word; /* Break long words if needed */
+    max-width: 300px; /* Maximum column width */
+}
+
+.stChatMessage table th {
+    background: rgba(9, 9, 9, 0.3);
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Table container with horizontal scroll for mobile */
+.stChatMessage .table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin: 10px 0;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Light theme adjustments */
+@media (prefers-color-scheme: light) {
+    .stChatMessage table {
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .stChatMessage table th {
+        background: rgba(9, 9, 9, 0.3);
+        color: #333333;
+    }
+
+    .stChatMessage table td,
+    .stChatMessage table th {
+        border-bottom: 1px solid rgba(9, 9, 9, 0.3);
+    }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .stChatMessage table {
+        font-size: 12px;
+    }
+
+    .stChatMessage table th,
+    .stChatMessage table td {
+        padding: 6px 8px;
+    }
+}
+

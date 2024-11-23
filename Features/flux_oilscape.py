@@ -13,6 +13,7 @@ hugging_face_api = os.getenv("HUGGING_FACE_API")
 headers = {"Authorization": f"Bearer {hugging_face_api}"}
 API_URL = "https://api-inference.huggingface.co/models/bingbangboom/flux_oilscape"
 
+
 def query(payload):
 	response = requests.post(API_URL, headers=headers, json=payload)
 	return response

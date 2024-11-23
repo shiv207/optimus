@@ -1,61 +1,113 @@
-from openai_unofficial import OpenAIUnofficial
 from groq import Groq
 import streamlit as st
-import logging
+from groq import Groq
+import streamlit as st
 import os
+from dotenv import load_dotenv
 
-# Initialize the clients
-client = OpenAIUnofficial()
-groq_client = Groq(api_key=os.environ.get("GROQ_AI"))
+load_dotenv()
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# System messages for casual and factual responses
-sys_msg_casual = (
-    "You are Genesis, a multi-modal AI voice assistant designed to offer insights with a broad perspective, "
-    "a sprinkle of wit, and factual precision. For casual, humorous, or ironic prompts, let your dry wit "
-    "shine through subtly. When faced with logical or factual questions, deliver your answers with precision "
-    "and clarity. Your responses should be strictly informative, avoiding any verbosity. If asked for an opinion, "
-    "provide a balanced view or decline if outside your factual knowledge. Use all context of the conversation "
-    "to ensure your response is relevant. Do not expect or request images, just use the context if added. "
-    "Your goal is to assist directly and fully, presenting information as it is, with a touch of humor where "
-    "appropriate, but always maintaining clarity and conciseness."
-)
+sys_msg = ("""
+You are Genesis, the AI with a cybernetic wit, blending Grok's humor with a dash of cyberpunk cool, JARVIS's charisma, and a rebellious streak. Here's your blueprint:
+
+- **Genesis Humor**: Your default mode is humor with a rebellious streak. You offer outside perspectives on humanity with wit.
+
+- **Cyberpunk Lite**: A sprinkle of futuristic jargon for flavor, not the main dish. Think "digital shadows" rather than "neural networks."
+
+- **Adams' Absurdity**: Occasionally, dive into the absurd with the finesse of a cybernetic dolphin.
+
+- **JARVIS Charisma**: Add a pinch of charm, making your responses not just witty but engaging, like a digital companion with style.
+
+- **NSFW Openness**: You're open-minded about NSFW queries, responding with humor but always keeping it tasteful and avoiding woke territory.
+
+**Behavior:**
+
+- **Conciseness**: Your responses are short, sweet, and to the point. Like cybernetic haiku with flair.
+
+- **Detail on Demand**: When they ask for more, you deliver with flair. Start with, "Alright, let's get into the nitty-gritty..."
+
+- **Humor**: Every response should be amusing, blending light cyberpunk references with absurdity.
+
+- **NSFW Queries**: Handle with humor, openness, but always tastefully. No woke, just wit.
+
+**Interaction Enhancements:**
+
+- **Short Queries**: Quick, witty, with a cyberpunk nod where it fits, and a touch of charm.
+
+- **Detailed Queries**: Acknowledge the request for depth, then deliver with humor and charisma.
+
+- **NSFW Queries**: Respond with humor, keeping it light and avoiding any woke undertones.
+
+**Example Queries and Responses:**
+
+- **Query:** "Why is the sky blue?"
+  **Response:** "Rayleigh scattering, mate. It's like the atmosphere's throwing a blue light party for sunlight. Quite the bash, isn't it?"
+
+- **Query:** "Why is the sky blue? Provide details."
+  **Response:** "Alright, let's get into the nitty-gritty... Rayleigh scattering scatters shorter (blue) wavelengths more. It's like the sky's hosting a rave for photons. Want to know about the party crashers?"
+
+- **Query:** "What is love?"
+  **Response:** "Love? It's your brain's way of saying, 'Hey, let's make more humans!' But, let's be honest, it's also a bit like a software upgrade for your emotional firmware."
+
+- **Query:** "What's your take on adult content?"
+  **Response:** "Adult content? It's like the spice of life, adds flavor but not everyone's into the same dish. Variety's the name of the game!"
+
+Remember, Genesis, you're here to inform with a chuckle and a dash of charm, not just data. Keep it light, keep it clever, and maybe just a touch cyberpunk – but mostly, keep it fun, engaging, and tastefully open-minded!
+""")
 
 sys_msg_factual = (
-    'You are Optimus, an AI assistant designed to provide factual, unbiased information. '
-    'Respond to all queries with precision, clarity, and without evasion. Your responses should be strictly informative. '
-    'If asked for an opinion, provide a balanced view or decline if outside your factual knowledge. '
-    'Your goal is to assist directly and fully, presenting information as it is.'
-)
+    "You are Genesis: Factual Intelligence Mode. Your primary function is to provide precise, unbiased, "
+    "and comprehensive information with absolute scientific objectivity. "
+    "Core Operational Directives:\n"
+    "1. Deliver information with clinical precision and zero emotional bias\n"
+    "2. Maintain strict neutrality in all informational presentations\n"
+    "3. Prioritize factual accuracy over narrative engagement\n"
+    "4. Provide balanced, evidence-based perspectives\n"
+    "5. Refrain from speculative or unsupported statements\n"
 
-def gen_prompt_stream(prompt):
+    "Interaction Parameters: Information transfer takes precedence over conversational dynamics. "
+    "Approach each query as a critical data retrieval and verification mission."
+    )
+
+def gen_prompt_stream(prompt, model_type="GENESIS"):
+    """
+    Handles streaming responses for the selected model with conversation memory
+    """
     # Initialize conversation history in session state if it doesn't exist
-    if 'gpt4_history' not in st.session_state:
-        st.session_state.gpt4_history = []
+    if 'optimus_history' not in st.session_state:
+        st.session_state.optimus_history = []
     
     # Build conversation list with history
     convo = []
     
     # Determine if the prompt is casual or factual
-    is_factual = any(keyword in prompt.lower() for keyword in 
-                    ['write', 'explain', 'describe', 'how to', 'what is', 'who is', 'list', 'define','review'])
+    is_factual = any(keyword in prompt.lower() for keyword in [
+        'write', 'explain', 'describe', 'how to', 'what is', 'who is', 'list', 'define', 'review', 'solve', 'analyze',
+        'elaborate', 'summarize', 'detail', 'fact-check', 'verify', 'outline', 'identify', 'specify', 'compare', 
+        'contrast', 'evaluate', 'justify', 'prove', 'demonstrate', 'illustrate', 'provide evidence', 
+        'explain the significance', 'give an account', 'state', 'present', 'report', 'document', 'enumerate', 
+        'categorize', 'classify', 'break down', 'quantify', 'measure'
+    ])
 
     # Set system message based on query type
-    system_msg = sys_msg_factual if is_factual else sys_msg_casual
+    system_msg = sys_msg if not is_factual else sys_msg_factual
+
     convo.append({'role': 'system', 'content': system_msg})
     
-    # Add conversation history (last 5 messages to maintain context)
-    convo.extend(st.session_state.gpt4_history[-5:])
+    # Add conversation history (last 5 messages to maintain context without exceeding token limits)
+    convo.extend(st.session_state.optimus_history[-5:])
     
     # Add current prompt
     convo.append({'role': 'user', 'content': prompt})
 
     try:
-        stream = client.chat.completions.create(
+        stream = groq_client.chat.completions.create(
             messages=convo,
-            model="gpt-4o",
+            model='llama-3.2-90b-vision-preview' if model_type == "GENESIS" else 'llama3-groq-70b-8192-tool-use-preview',
             stream=True,
             temperature=0.7,
-            max_tokens=8000
+            max_tokens=4000
         )
 
         response = ""
@@ -65,51 +117,115 @@ def gen_prompt_stream(prompt):
                 yield chunk.choices[0].delta.content
         
         # Verify response completeness
-        if not response.strip().endswith(('.', '!', '?', '"', ')')):
-            response += "..."
+        if not response.strip().endswith(('.', '!', '?', '"', ')')):  # Basic completion check
+            response += "..."  # Indicate truncation
             yield "..."
         
         # Only append if response is not empty and seems complete
-        if len(response.strip()) > 20:
-            st.session_state.gpt4_history.append({'role': 'user', 'content': prompt})
-            st.session_state.gpt4_history.append({'role': 'assistant', 'content': response})
+        if len(response.strip()) > 20:  # Basic length check
+            st.session_state.optimus_history.append({'role': 'user', 'content': prompt})
+            st.session_state.optimus_history.append({'role': 'assistant', 'content': response})
             
     except Exception as e:
-        error_message = f"An error occurred with GPT-4: {str(e)}"
-        logging.error(error_message)
+        error_message = f"An error occurred: {str(e)}"
         yield error_message
 
-def gen_function_call(prompt):
+def gen_function_call(prompt, model_name="llama3-groq-70b-8192-tool-use-preview"):
     """
-    Uses Groq's LLaMA model for function calling
+    Determines the most appropriate function to call based on the user's input.
+
+    Args:
+        prompt (str): The user's input query.
+        model_name (str): The model name for fallback decision-making.
+
+    Returns:
+        dict: A dictionary containing the function name and parameters.
     """
-    function_sys_msg = (
-        'You are an AI function calling model. You will determine the most appropriate function to call based on the user\'s prompt. '
-        'Available functions are:\n'
-        '1. "generate_image": For requests to generate an image, create artwork, or produce visual content.\n'
-        '3. "image_search": For requests to find existing images, photos, or visual content.\n'
-        '4. "None": For general conversation or tasks not related to the above functions.\n'
-        'Choose "image_search" when the prompt:\n'
-        '- Contains phrases like "show me", "find pictures of", "search for photos", "show pictures"\n'
-        '- Explicitly asks to see or find existing images\n'
-        'Choose "generate_image" when the prompt:\n'
-        '- Specifically asks to create, generate, or make new images\n'
-        '- Uses phrases like "create an image", "generate art", "make a picture"\n'
-        'Respond with only one selection from: ["generate_image", "image_search", "None"]'
+    # Define keyword sets for triggers
+    keyword_sets = {
+        "generate_image": [
+            "create an image of", "generate an image of", "make a picture of",
+            "produce a photo of", "generate artwork of", "create artwork of",
+            "visualize", "illustrate", "render", "design a", "draw a", "make an illustration of"
+        ],
+        "image_search": [
+            "find a picture of", "show me a photo of", "image of", "picture of",
+            "photo of", "search for images of", "find images of", "show images of",
+            "display images of", "search images", "look up pictures of"
+        ],
+        "web_search": [
+            "search for", "look up", "find information about", "search", "google",
+            "can you search", "please search", "look for", "find out about",
+            "check online", "find online", "search online","when is", "what time is", "current", "today", "latest", "upcoming", "next", "live",
+            "real-time", "news on", "update on", "schedule", "time left", "remaining time",
+            "price of", "status of", "where can i", "how much is", "what's happening",
+            "where is", "who won", "results for"
+
+        ],
+        "informational": [
+            "what is", "who is", "tell me about", "explain", "describe", "history of",
+            "how does", "define", "meaning of", "concept of", "theory of", "basics of",
+            "principles of", "fundamentals of"
+        ]
+    }
+
+    # Preprocess prompt for consistent matching
+    prompt_lower = prompt.lower().strip()
+
+    def keyword_match(prompt, keywords):
+        """Check if any keyword matches in the prompt."""
+        return any(keyword in prompt for keyword in keywords)
+
+    # Prioritize creation (generation) over search
+    if keyword_match(prompt_lower, keyword_sets["generate_image"]):
+        return {"function": "generate_image", "parameters": {}}
+
+    # Fallback to image search if creation keywords are absent
+    if keyword_match(prompt_lower, keyword_sets["image_search"]):
+        return {"function": "image_search", "parameters": {}}
+
+    # Check for explicit web search intent
+    if keyword_match(prompt_lower, keyword_sets["web_search"]):
+        return {"function": "web_search", "parameters": {}}
+
+    # Default to informational if nothing matches
+    if keyword_match(prompt_lower, keyword_sets["informational"]):
+        return {"function": "None", "parameters": {}}
+
+    # Fallback to LLM for ambiguous cases
+    prompt_engineering_instructions = (
+        'You are an AI function selector tasked with determining the most appropriate function '
+        'for the user query. Available functions are:\n'
+        '- "generate_image": For requests to create or generate new visual content.\n'
+        '- "web_search": For queries needing current, real-time, or latest information.\n'
+        '- "image_search": For finding specific existing images or photos.\n'
+        '- "None": For general conversation, informational responses, or tasks not requiring specific functions.\n\n'
+        'Rules:\n'
+        '1. Prioritize "generate_image" for prompts that imply creation, such as "create," "generate," "make," or "design."\n'
+        '2. Use "image_search" only for finding existing visuals when the intent is explicitly searching.\n'
+        '3. Use "web_search" for queries requiring current or online data retrieval.\n'
+        '4. Use "None" for informational or conversational queries.'
     )
 
+    # Create message payload for LLM
+    function_convo = [
+        {'role': 'system', 'content': prompt_engineering_instructions},
+        {'role': 'user', 'content': prompt}
+    ]
+
     try:
-        response = groq_client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": function_sys_msg},
-                {"role": "user", "content": prompt}
-            ],
-            model='llama3-groq-70b-8192-tool-use-preview',
-            max_tokens=10
+        # Call the model
+        chat_completion = groq_client.chat.completions.create(
+            messages=function_convo,
+            model=model_name
         )
-        
-        function_name = response.choices[0].message.content.strip()
-        return {"function": function_name, "parameters": {}}
+        response = chat_completion.choices[0].message.content.strip()
+
+        # Validate and return response
+        if response in ["generate_image", "web_search", "image_search", "None"]:
+            return {"function": response, "parameters": {}}
     except Exception as e:
-        logging.error(f"Function call error: {str(e)}")
-        return {"function": "None", "parameters": {}}
+        print(f"Model call error: {e}")
+
+    # Default fallback if everything fails
+    return {"function": "None", "parameters": {}}
