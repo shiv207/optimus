@@ -21,6 +21,8 @@ def scrape_images(query, max_results=4):
         with DDGS() as ddgs:
             # Refine the query to get more accurate results
             refined_query = refine_search_query(query)
+            # Refine the query to get more accurate results
+            refined_query = refine_search_query(query)
             # Get more images initially to have backups
             all_images = list(ddgs.images(refined_query, max_results=20))
             
