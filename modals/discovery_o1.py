@@ -14,7 +14,6 @@ from io import BytesIO
 from dataclasses import dataclass
 from duckduckgo_search import DDGS
 from functools import lru_cache
-import logging
 
 @dataclass
 class ImageResult:
@@ -87,19 +86,7 @@ class Perplexity:
         }
         self.session.headers.update(self.request_headers)
         self.timestamp: str = format(getrandbits(32), "08x")
-        try:
-            response = self.session.get(url=f"https://www.perplexity.ai/socket.io/?EIO=4&transport=polling&t={self.timestamp}")
-            response.raise_for_status()  # Check for HTTP errors
-            response_data = response.text[1:]
-            if not response_data:
-                raise ValueError("Empty response received from server")
-            self.session_id: str = loads(response_data)["sid"]
-        except requests.exceptions.HTTPError as http_err:
-            logging.error(f"HTTP error occurred: {http_err} - Response: {response.text}")
-            raise ConnectionError("Failed to initialize session with Perplexity AI")
-        except (requests.exceptions.RequestException, ValueError, KeyError) as e:
-            logging.error(f"Failed to initialize session: {str(e)}")
-            raise ConnectionError("Failed to initialize session with Perplexity AI")
+        self.session_id: str = loads(self.session.get(url=f"https://www.perplexity.ai/socket.io/?EIO=4&transport=polling&t={self.timestamp}").text[1:])["sid"]
         self.message_counter: int = 1
         self.base_message_number: int = 420
         self.is_request_finished: bool = True
@@ -238,22 +225,17 @@ class Perplexity:
             )
         )
         
-        try:
-            # Send query immediately without waiting for images
-            self.websocket.send(str(self.base_message_number + self.message_counter) + dumps(
-                ["perplexity_ask", query, {
-                    "frontend_session_id": str(uuid4()),
-                    "language": "en-GB",
-                    "timezone": "UTC",
-                    "search_focus": "internet",
-                    "frontend_uuid": str(uuid4()),
-                    "mode": "concise"
-                }]
-            ))
-        except Exception as e:
-            logging.error(f"Failed to send query: {str(e)}")
-            yield {"error": f"Failed to send query: {str(e)}"}
-            return
+        # Send query immediately without waiting for images
+        self.websocket.send(str(self.base_message_number + self.message_counter) + dumps(
+            ["perplexity_ask", query, {
+                "frontend_session_id": str(uuid4()),
+                "language": "en-GB",
+                "timezone": "UTC",
+                "search_focus": "internet",
+                "frontend_uuid": str(uuid4()),
+                "mode": "concise"
+            }]
+        ))
 
         # Initialize response tracking
         start_time: float = time()
@@ -275,36 +257,30 @@ class Perplexity:
                 response = self.response_queue.pop(0)
                 last_update = current_time
                 
-                # Attempt to parse the response
-                try:
-                    # Update collected response
-                    if "answer" in response and response["answer"]:
-                        self.collected_response["answer"] = response["answer"]
-                        
-                        # Add images if available
-                        if not self.collected_response["images"] and image_future:
-                            try:
-                                self.collected_response["images"] = image_future[0]
-                            except:
-                                self.collected_response["images"] = ["https://via.placeholder.com/400x300?text=No+Image"] * 4
-                                
-                        yield self.collected_response.copy()
+                # Update collected response
+                if "answer" in response and response["answer"]:
+                    self.collected_response["answer"] = response["answer"]
+                    
+                    # Add images if available
+                    if not self.collected_response["images"] and image_future:
+                        try:
+                            self.collected_response["images"] = image_future[0]
+                        except:
+                            self.collected_response["images"] = ["https://via.placeholder.com/400x300?text=No+Image"] * 4
+                            
+                    yield self.collected_response.copy()
 
-                    # Process web results
-                    if "web_results" in response:
-                        self.collected_response["references"] = [
-                            {
-                                "title": result.get("title", "Unknown Title"),
-                                "url": result.get("url", "No URL"),
-                                "snippet": result.get("snippet", "")
-                            }
-                            for result in response["web_results"]
-                        ]
-                        yield self.collected_response.copy()
-                except Exception as e:
-                    logging.error(f"Error processing response: {str(e)}")
-                    yield {"error": f"Error processing response: {str(e)}"}
-                    return
+                # Process web results
+                if "web_results" in response:
+                    self.collected_response["references"] = [
+                        {
+                            "title": result.get("title", "Unknown Title"),
+                            "url": result.get("url", "No URL"),
+                            "snippet": result.get("snippet", "")
+                        }
+                        for result in response["web_results"]
+                    ]
+                    yield self.collected_response.copy()
             
             # Small sleep to prevent CPU spinning
             if current_time - last_update > check_interval:
