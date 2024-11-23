@@ -207,7 +207,3 @@ def handle_image_search_and_description(query: str, num_images=4):
                 </div>'''
         image_html += '</div>'
         st.markdown(image_html, unsafe_allow_html=True)
-
-# Example usage
-query = "billie eilish in black lengerie vogue"
-handle_image_search_and_description(query)

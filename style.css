@@ -956,6 +956,10 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     animation: strokeGlitch 2.5s infinite steps(1);
 }
 
+.st-emotion-cache-hzygls.ea3mdgi6 {
+    background-color: transparent !important;
+}
+
 @keyframes strokeGlitch {
     0%, 100% {
         opacity: 1;
