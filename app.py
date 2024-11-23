@@ -651,6 +651,8 @@ def web_search(prompt: str) -> None:
     except Exception as e:
         st.error(f"Search error: {str(e)}")
         logging.error(f"Search error: {str(e)}")
+        # Add logging for debugging
+        logging.debug("Debugging web_search: Check if the response is empty or malformed.")
 
 def display_sources(sources):
     main_sources = sources[:3]
