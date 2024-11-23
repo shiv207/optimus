@@ -4,8 +4,10 @@ from duckduckgo_search import DDGS
 import os
 from dotenv import load_dotenv
 import json
+import json
 from groq import Groq
 from concurrent.futures import ThreadPoolExecutor
+import nltk
 import nltk
 
 # Load environment variables
@@ -23,12 +25,22 @@ def scrape_images(query, max_results=4):
             refined_query = refine_search_query(query)
             # Refine the query to get more accurate results
             refined_query = refine_search_query(query)
+            # Refine the query to get more accurate results
+            refined_query = refine_search_query(query)
+            # Refine the query to get more accurate results
+            refined_query = refine_search_query(query)
             # Get more images initially to have backups
             all_images = list(ddgs.images(refined_query, max_results=20))
             
             if not all_images:
                 raise ValueError("No images found")
+            all_images = list(ddgs.images(refined_query, max_results=20))
             
+            if not all_images:
+                raise ValueError("No images found")
+            
+            # Extract URLs
+            image_urls = [img['image'] for img in all_images if 'image' in img]
             # Extract URLs
             image_urls = [img['image'] for img in all_images if 'image' in img]
             return image_urls[:max_results] if image_urls else ["https://via.placeholder.com/400x300.png"]
@@ -39,9 +51,23 @@ def scrape_images(query, max_results=4):
     except ValueError as e:
         st.warning(f"Error in fetching images: {str(e)}")
         return ["https://via.placeholder.com/400x300.png"]
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {str(e)}")
+        return ["https://via.placeholder.com/400x300.png"]
+    except ValueError as e:
+        st.warning(f"Error in fetching images: {str(e)}")
+        return ["https://via.placeholder.com/400x300.png"]
     except Exception as e:
         st.error(f"Unexpected error: {str(e)}")
+        st.error(f"Unexpected error: {str(e)}")
         return ["https://via.placeholder.com/400x300.png"]
+
+def refine_search_query(query):
+    """Refine search query using NLTK."""
+    # Tokenize, remove stopwords, and filter out non-alphanumeric tokens
+    tokens = nltk.word_tokenize(query.lower())
+    filtered_tokens = [word for word in tokens if word.isalnum()]
+    return " ".join(filtered_tokens)
 
 def refine_search_query(query):
     """Refine search query using NLTK."""
@@ -53,9 +79,12 @@ def refine_search_query(query):
 def get_brief_description(query):
     """Generate a brief description using Groq."""
     prompt = f"Tell me a brief description of the object '{query}'."
+    prompt = f"Tell me a brief description of the object '{query}'."
     try:
         response = groq_client.chat.completions.create(
             model="mixtral-8x7b-32768",
+            messages=[{"role": "system", "content": "You are a helpful assistant."}, 
+                      {"role": "user", "content": prompt}],
             messages=[{"role": "system", "content": "You are a helpful assistant."}, 
                       {"role": "user", "content": prompt}],
             max_tokens=200
@@ -71,6 +100,7 @@ def get_fallback_description(query):
 
 def apply_custom_css():
     """Apply custom CSS for styling."""
+    """Apply custom CSS for styling."""
     custom_css = """
     <style>
         :root {
@@ -79,6 +109,7 @@ def apply_custom_css():
             --bg-color-light: rgb(22,232,232);
             --text-color-light: #000000;
             --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            --gap-size: 12px;
             --gap-size: 12px;
         }
         
@@ -104,7 +135,9 @@ def apply_custom_css():
 
         .img-rounded {
             border-radius: 20px;
+            border-radius: 20px;
             object-fit: cover;
+            margin-bottom: 0.375rem;
             margin-bottom: 0.375rem;
         }
 
@@ -116,15 +149,19 @@ def apply_custom_css():
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: var(--gap-size);
+            gap: var(--gap-size);
             justify-items: center;
             align-items: center;
+            margin-top: 0.375rem;
             margin-top: 0.375rem;
         }
 
         .image-container {
             width: 100%;
             padding-top: 75%;
+            padding-top: 75%;
             position: relative;
+            border-radius: 10px;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -138,10 +175,13 @@ def apply_custom_css():
             height: 100%;
             object-fit: cover;
             border-radius: 20px;
+            border-radius: 20px;
         }
 
         @media (max-width: 768px) {
             .description-box {
+                font-size: 0.875rem;
+                padding: 0.25rem;
                 font-size: 0.875rem;
                 padding: 0.25rem;
             }
@@ -151,9 +191,11 @@ def apply_custom_css():
                 gap: var(--gap-size);
                 align-items: center;
                 margin-top: 0.375rem;
+                margin-top: 0.375rem;
             }
             .image-container {
                 width: 100%;
+                padding-top: 75%;
                 padding-top: 75%;
                 position: relative;
                 border-radius: 10px;
@@ -194,14 +236,19 @@ def handle_image_search_and_description(query: str, num_images=4):
         image_urls = future_images.result()
     
     # Display the results in Streamlit
+    # Display the results in Streamlit
     st.markdown(f'<div class="description-box">{description}</div>', unsafe_allow_html=True)
     
     if image_urls:
         # Create a container for images with error handling
+        # Create a container for images with error handling
         image_html = '<div class="image-grid">'
+        for image_url in image_urls[:4]:  # Limit to 4 images
         for image_url in image_urls[:4]:  # Limit to 4 images
             image_html += f'''
                 <div class="image-container">
+                    <img src="{image_url}" alt="Search Result" 
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300.png';" />
                     <img src="{image_url}" alt="Search Result" 
                          onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300.png';" />
                 </div>'''
