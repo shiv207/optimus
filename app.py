@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 import json
 from urllib.parse import urlparse
 import html
+import traceback
 
 
 def generate_image(prompt):
@@ -609,80 +610,50 @@ def streamlit_ui():
 
 def web_search(prompt: str) -> None:
     try:
+        logging.info("Initializing Perplexity client...")
         perplexity = Perplexity()
         placeholder = st.empty()
 
-        # Add logging for request details
-        logging.info(f"Initiating search request - Prompt: {prompt[:100]}...")
-        
-        try:
-            # Add timeout to prevent hanging
-            search_results = perplexity.generate_answer(prompt)
-            
-            # Validate response
-            if not search_results:
-                logging.warning("Empty response received from Perplexity")
-                st.warning("No results found. Please try again.")
-                return
-                
-            # Attempt to parse response if it's a string
-            if isinstance(search_results, str):
-                try:
-                    search_results = json.loads(search_results)
-                    logging.info("Successfully parsed string response as JSON")
-                except json.JSONDecodeError:
-                    logging.error(f"Invalid JSON string received: {search_results[:200]}")
-                    st.error("Unable to process search results. Please try again.")
-                    return
-            
-            # Log successful response
-            logging.info(f"Received valid response of type: {type(search_results)}")
-            
-            # Process the results
-            if isinstance(search_results, (list, tuple)):
-                processed = False
-                for answer in search_results:
-                    if isinstance(answer, dict) and answer.get('answer'):
-                        processed = True
-                        final_answer = answer['answer']
-                        images = answer.get('images', [])
-                        
-                        response_html = f"""
-                        <div style="margin-bottom: 20px;">
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px;">
-                                {''.join([
-                                    f'<div style="aspect-ratio: 1; position: relative;">'
-                                    f'<img src="{img}" alt="Search result" '
-                                    f'style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">'
-                                    f'</div>'
-                                    for img in images[:4]
-                                ])}
-                            </div>
-                            <div style="font-size: 16px; line-height: 1.6; color: #d1d5db;">
-                                {final_answer}
-                            </div>
-                        </div>
-                        """
-                        
-                        placeholder.markdown(response_html, unsafe_allow_html=True)
-                        
-                        if answer.get('references'):
-                            display_sources(answer['references'])
-                
-                if not processed:
-                    logging.warning("No valid answers found in response")
-                    st.warning("No valid results found. Please try a different search.")
-            else:
-                logging.error(f"Unexpected response format: {type(search_results)}")
-                st.error("Received unexpected response format. Please try again.")
+        # Debug API configuration
+        logging.info("Checking API configuration...")
+        if hasattr(perplexity, 'api_key'):
+            logging.info("API key is configured")
+        else:
+            logging.error("API key is missing")
+            st.error("API configuration is incomplete. Please check your environment variables.")
+            return
 
-        except Exception as search_err:
-            logging.error(f"Search error: {str(search_err)}\nType: {type(search_err)}")
-            st.error("Search service temporarily unavailable. Please try again later.")
+        # Add request debugging
+        logging.info(f"Making API request with prompt length: {len(prompt)}")
+        try:
+            with st.spinner("Searching..."):
+                search_results = perplexity.generate_answer(prompt)
+                logging.info(f"API response received - Type: {type(search_results)}")
+                
+                if search_results is None:
+                    logging.error("API returned None response")
+                    st.error("No response from search service. Please try again.")
+                    return
+
+                # Rest of your processing code...
+
+        except AttributeError as ae:
+            logging.error(f"Perplexity client configuration error: {str(ae)}")
+            st.error("Search service is not properly configured.")
+            return
+        except ConnectionError as ce:
+            logging.error(f"Connection error: {str(ce)}")
+            st.error("Unable to connect to search service. Please check your internet connection.")
+            return
+        except Exception as e:
+            logging.error(f"Search error: {str(e)}, Type: {type(e)}")
+            st.error("Search failed. Please try again later.")
             return
 
     except Exception as e:
-        logging.error(f"Critical error: {str(e)}\nType: {type(e)}")
+        logging.error(f"Critical error in web_search: {str(e)}")
+        logging.error(f"Error type: {type(e)}")
+        logging.error(f"Error traceback: {traceback.format_exc()}")
         st.error("An unexpected error occurred. Please try again later.")
 
 def display_sources(sources):
