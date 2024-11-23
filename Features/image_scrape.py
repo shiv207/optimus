@@ -7,24 +7,28 @@ from groq import Groq
 import asyncio
 import aiohttp
 from concurrent.futures import ThreadPoolExecutor
-import subprocess  # Add this line at the top of your script
+import subprocess
 import sys
 import spacy
 import streamlit as st
 
-# Now you can use subprocess in your code
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
     st.error("""
     The required spaCy model is not installed. Attempting to install it...
     """)
-
+    
     try:
-        subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
-        # Reload the model after installation
-        nlp = spacy.load("en_core_web_sm")
-        st.success("spaCy model installed successfully!")
+        # Add more detailed logging for debugging
+        result = subprocess.run([sys.executable, "-m", "spacy", "download", "en_core_web_sm"], 
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            st.error(f"Installation failed: {result.stderr}")
+        else:
+            # Reload the model after installation
+            nlp = spacy.load("en_core_web_sm")
+            st.success("spaCy model installed successfully!")
     except subprocess.CalledProcessError as e:
         st.error(f"Installation failed: {e}")
         st.stop()
