@@ -14,6 +14,7 @@ from io import BytesIO
 from dataclasses import dataclass
 from duckduckgo_search import DDGS
 from functools import lru_cache
+import logging
 
 @dataclass
 class ImageResult:
@@ -225,17 +226,22 @@ class Perplexity:
             )
         )
         
-        # Send query immediately without waiting for images
-        self.websocket.send(str(self.base_message_number + self.message_counter) + dumps(
-            ["perplexity_ask", query, {
-                "frontend_session_id": str(uuid4()),
-                "language": "en-GB",
-                "timezone": "UTC",
-                "search_focus": "internet",
-                "frontend_uuid": str(uuid4()),
-                "mode": "concise"
-            }]
-        ))
+        try:
+            # Send query immediately without waiting for images
+            self.websocket.send(str(self.base_message_number + self.message_counter) + dumps(
+                ["perplexity_ask", query, {
+                    "frontend_session_id": str(uuid4()),
+                    "language": "en-GB",
+                    "timezone": "UTC",
+                    "search_focus": "internet",
+                    "frontend_uuid": str(uuid4()),
+                    "mode": "concise"
+                }]
+            ))
+        except Exception as e:
+            logging.error(f"Failed to send query: {str(e)}")
+            yield {"error": f"Failed to send query: {str(e)}"}
+            return
 
         # Initialize response tracking
         start_time: float = time()
@@ -257,30 +263,36 @@ class Perplexity:
                 response = self.response_queue.pop(0)
                 last_update = current_time
                 
-                # Update collected response
-                if "answer" in response and response["answer"]:
-                    self.collected_response["answer"] = response["answer"]
-                    
-                    # Add images if available
-                    if not self.collected_response["images"] and image_future:
-                        try:
-                            self.collected_response["images"] = image_future[0]
-                        except:
-                            self.collected_response["images"] = ["https://via.placeholder.com/400x300?text=No+Image"] * 4
-                            
-                    yield self.collected_response.copy()
+                # Attempt to parse the response
+                try:
+                    # Update collected response
+                    if "answer" in response and response["answer"]:
+                        self.collected_response["answer"] = response["answer"]
+                        
+                        # Add images if available
+                        if not self.collected_response["images"] and image_future:
+                            try:
+                                self.collected_response["images"] = image_future[0]
+                            except:
+                                self.collected_response["images"] = ["https://via.placeholder.com/400x300?text=No+Image"] * 4
+                                
+                        yield self.collected_response.copy()
 
-                # Process web results
-                if "web_results" in response:
-                    self.collected_response["references"] = [
-                        {
-                            "title": result.get("title", "Unknown Title"),
-                            "url": result.get("url", "No URL"),
-                            "snippet": result.get("snippet", "")
-                        }
-                        for result in response["web_results"]
-                    ]
-                    yield self.collected_response.copy()
+                    # Process web results
+                    if "web_results" in response:
+                        self.collected_response["references"] = [
+                            {
+                                "title": result.get("title", "Unknown Title"),
+                                "url": result.get("url", "No URL"),
+                                "snippet": result.get("snippet", "")
+                            }
+                            for result in response["web_results"]
+                        ]
+                        yield self.collected_response.copy()
+                except Exception as e:
+                    logging.error(f"Error processing response: {str(e)}")
+                    yield {"error": f"Error processing response: {str(e)}"}
+                    return
             
             # Small sleep to prevent CPU spinning
             if current_time - last_update > check_interval:
