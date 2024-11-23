@@ -612,67 +612,77 @@ def web_search(prompt: str) -> None:
         perplexity = Perplexity()
         placeholder = st.empty()
 
-        # Add deployment-specific logging
-        logging.info(f"Starting web search with prompt: {prompt[:100]}...")
+        # Add logging for request details
+        logging.info(f"Initiating search request - Prompt: {prompt[:100]}...")
         
         try:
+            # Add timeout to prevent hanging
             search_results = perplexity.generate_answer(prompt)
-            # Log the raw response for debugging
-            logging.debug(f"Raw search results type: {type(search_results)}")
-            logging.debug(f"Raw search results preview: {str(search_results)[:200]}")
             
-            # Handle empty or None responses
+            # Validate response
             if not search_results:
-                st.warning("No results found. Please try a different search.")
-                logging.warning("Empty search results received")
+                logging.warning("Empty response received from Perplexity")
+                st.warning("No results found. Please try again.")
                 return
                 
-        except json.JSONDecodeError as json_err:
-            logging.error(f"JSON parsing error in deployed environment: {str(json_err)}")
-            st.error("Unable to process search results. Please try again later.")
-            return
+            # Attempt to parse response if it's a string
+            if isinstance(search_results, str):
+                try:
+                    search_results = json.loads(search_results)
+                    logging.info("Successfully parsed string response as JSON")
+                except json.JSONDecodeError:
+                    logging.error(f"Invalid JSON string received: {search_results[:200]}")
+                    st.error("Unable to process search results. Please try again.")
+                    return
+            
+            # Log successful response
+            logging.info(f"Received valid response of type: {type(search_results)}")
+            
+            # Process the results
+            if isinstance(search_results, (list, tuple)):
+                processed = False
+                for answer in search_results:
+                    if isinstance(answer, dict) and answer.get('answer'):
+                        processed = True
+                        final_answer = answer['answer']
+                        images = answer.get('images', [])
+                        
+                        response_html = f"""
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px;">
+                                {''.join([
+                                    f'<div style="aspect-ratio: 1; position: relative;">'
+                                    f'<img src="{img}" alt="Search result" '
+                                    f'style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">'
+                                    f'</div>'
+                                    for img in images[:4]
+                                ])}
+                            </div>
+                            <div style="font-size: 16px; line-height: 1.6; color: #d1d5db;">
+                                {final_answer}
+                            </div>
+                        </div>
+                        """
+                        
+                        placeholder.markdown(response_html, unsafe_allow_html=True)
+                        
+                        if answer.get('references'):
+                            display_sources(answer['references'])
+                
+                if not processed:
+                    logging.warning("No valid answers found in response")
+                    st.warning("No valid results found. Please try a different search.")
+            else:
+                logging.error(f"Unexpected response format: {type(search_results)}")
+                st.error("Received unexpected response format. Please try again.")
+
         except Exception as search_err:
-            logging.error(f"Search error in deployed environment: {str(search_err)}")
+            logging.error(f"Search error: {str(search_err)}\nType: {type(search_err)}")
             st.error("Search service temporarily unavailable. Please try again later.")
             return
 
-        # Process valid results
-        if isinstance(search_results, (list, tuple)):
-            for answer in search_results:
-                if not isinstance(answer, dict):
-                    continue
-                    
-                if answer.get('answer'):
-                    final_answer = answer['answer']
-                    images = answer.get('images', [])
-                    
-                    response_html = f"""
-                    <div style="margin-bottom: 20px;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px;">
-                            {''.join([
-                                f'<div style="aspect-ratio: 1; position: relative;">'
-                                f'<img src="{img}" alt="Search result" '
-                                f'style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">'
-                                f'</div>'
-                                for img in images[:4]
-                            ])}
-                        </div>
-                        <div style="font-size: 16px; line-height: 1.6; color: #d1d5db;">
-                            {final_answer}
-                        </div>
-                    </div>
-                    """
-                    
-                    placeholder.markdown(response_html, unsafe_allow_html=True)
-                
-                if answer.get('references'):
-                    display_sources(answer['references'])
-        else:
-            logging.error(f"Unexpected search_results type: {type(search_results)}")
-            st.error("Received unexpected response format. Please try again.")
-
     except Exception as e:
-        logging.error(f"Deployment environment error: {str(e)}")
+        logging.error(f"Critical error: {str(e)}\nType: {type(e)}")
         st.error("An unexpected error occurred. Please try again later.")
 
 def display_sources(sources):
