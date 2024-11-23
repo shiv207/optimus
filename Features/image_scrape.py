@@ -1,7 +1,12 @@
 import streamlit as st
 from duckduckgo_search import DDGS
 import os
-import spacy
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.tag import pos_tag
+from nltk import FreqDist
+from nltk.stem import WordNetLemmatizer
 from dotenv import load_dotenv
 from groq import Groq
 import asyncio
@@ -9,29 +14,15 @@ import aiohttp
 from concurrent.futures import ThreadPoolExecutor
 import subprocess
 import sys
-import spacy
-import streamlit as st
 
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    st.error("""
-    The required spaCy model is not installed. Attempting to install it...
-    """)
-    
-    try:
-        # Add more detailed logging for debugging
-        result = subprocess.run([sys.executable, "-m", "spacy", "download", "en_core_web_sm"], 
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode != 0:
-            st.error(f"Installation failed: {result.stderr}")
-        else:
-            # Reload the model after installation
-            nlp = spacy.load("en_core_web_sm")
-            st.success("spaCy model installed successfully!")
-    except subprocess.CalledProcessError as e:
-        st.error(f"Installation failed: {e}")
-        st.stop()
+# Download NLTK resources if not already downloaded
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+
+# Initialize lemmatizer for better word normalization
+lemmatizer = WordNetLemmatizer()
 
 # Load environment variables
 load_dotenv()
@@ -41,13 +32,29 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY)
 
 def refine_search_query(query):
-    """Refine search query using spaCy NLP to extract meaningful keywords."""
-    doc = nlp(query.lower())
-    important_pos = {"NOUN", "PROPN", "ADJ"}
-    stop_words = {"find", "show", "get", "search", "look", "give", "want", "need", "image", "picture", "photo", "images", "pictures", "photos"}
-    keywords = [token.text for token in doc if token.pos_ in important_pos and not token.is_stop and token.text not in stop_words and len(token.text) > 1]
+    """Refine search query using NLTK to extract meaningful keywords with POS tagging and lemmatization."""
+    # Tokenize the input query
+    word_tokens = word_tokenize(query.lower())
     
-    return ' '.join(keywords) if keywords else query
+    # Remove stopwords and non-alphanumeric characters
+    stop_words = set(stopwords.words("english"))
+    filtered_tokens = [word for word in word_tokens if word.isalnum() and word not in stop_words]
+    
+    # POS tagging
+    tagged_tokens = pos_tag(filtered_tokens)
+    
+    # Filter out irrelevant POS and lemmatize important words (Nouns, Adjectives, Proper Nouns)
+    important_tokens = []
+    for word, pos in tagged_tokens:
+        if pos in ['NN', 'NNS', 'NNP', 'NNPS', 'JJ']:  # Nouns and adjectives
+            lemmatized_word = lemmatizer.lemmatize(word)
+            important_tokens.append(lemmatized_word)
+    
+    # Combine the important tokens back into a string
+    refined_query = ' '.join(important_tokens)
+    
+    # Return the refined query, or the original query if no important tokens are found
+    return refined_query if important_tokens else query
 
 async def fetch_image_url(session, url):
     """Asynchronously fetch a single image URL to verify it's valid."""
@@ -68,9 +75,11 @@ def scrape_images(query, max_results=4):
     """Search for images with guaranteed results."""
     try:
         with DDGS() as ddgs:
+            # Refine the query to get more accurate results
+            refined_query = refine_search_query(query)
             # Get more images initially to have backups
             all_images = list(ddgs.images(
-                query,
+                refined_query,
                 max_results=20,  # Get more for backup
             ))
             
@@ -235,22 +244,3 @@ def handle_image_search_and_description(query: str, num_images=4):
         image_urls = future_images.result()
     
     # Display the results
-    st.markdown(f'<div class="description-box">{description}</div>', unsafe_allow_html=True)
-    
-    if image_urls:
-        # Create a container for images with onerror handler
-        image_html = '<div class="image-grid">'
-        for image_url in image_urls[:4]:  # Always limit to 4
-            image_html += f'''
-                <div class="image-container">
-                    <img src="{image_url}" 
-                         alt="Search Result" 
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300.png';"
-                    />
-                </div>'''
-        image_html += '</div>'
-        st.markdown(image_html, unsafe_allow_html=True)
-
-def search_images_duckduckgo(query, max_results=4):
-    """Search for images using DuckDuckGo and verify their availability."""
-    return scrape_images(query, max_results)  # Call the existing scrape_images function
