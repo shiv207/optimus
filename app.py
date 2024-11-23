@@ -610,50 +610,70 @@ def streamlit_ui():
 def web_search(prompt: str) -> None:
     try:
         perplexity = Perplexity()
-        final_answer = ""
-        sources = None
-        images = None
         placeholder = st.empty()
 
-        for answer in perplexity.generate_answer(prompt):
-            if "error" in answer:
-                st.error(answer["error"])
-                return
-
-            if answer.get('answer'):
-                final_answer = answer['answer']
-                images = answer.get('images', [])
-                
-                response_html = f"""
-                <div style="margin-bottom: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px;">
-                        {''.join([
-                            f'<div style="aspect-ratio: 1; position: relative;">'
-                            f'<img src="{img}" alt="Search result" '
-                            f'style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">'
-                            f'</div>'
-                            for img in images[:4]
-                        ])}
-                    </div>
-                    <div style="font-size: 16px; line-height: 1.6; color: #d1d5db;">
-                        {final_answer}
-                    </div>
-                </div>
-                """
-                
-                placeholder.markdown(response_html, unsafe_allow_html=True)
+        # Add deployment-specific logging
+        logging.info(f"Starting web search with prompt: {prompt[:100]}...")
+        
+        try:
+            search_results = perplexity.generate_answer(prompt)
+            # Log the raw response for debugging
+            logging.debug(f"Raw search results type: {type(search_results)}")
+            logging.debug(f"Raw search results preview: {str(search_results)[:200]}")
             
-            if answer.get('references'):
-                sources = answer['references']
+            # Handle empty or None responses
+            if not search_results:
+                st.warning("No results found. Please try a different search.")
+                logging.warning("Empty search results received")
+                return
+                
+        except json.JSONDecodeError as json_err:
+            logging.error(f"JSON parsing error in deployed environment: {str(json_err)}")
+            st.error("Unable to process search results. Please try again later.")
+            return
+        except Exception as search_err:
+            logging.error(f"Search error in deployed environment: {str(search_err)}")
+            st.error("Search service temporarily unavailable. Please try again later.")
+            return
 
-        if sources:
-            display_sources(sources)
+        # Process valid results
+        if isinstance(search_results, (list, tuple)):
+            for answer in search_results:
+                if not isinstance(answer, dict):
+                    continue
+                    
+                if answer.get('answer'):
+                    final_answer = answer['answer']
+                    images = answer.get('images', [])
+                    
+                    response_html = f"""
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px;">
+                            {''.join([
+                                f'<div style="aspect-ratio: 1; position: relative;">'
+                                f'<img src="{img}" alt="Search result" '
+                                f'style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">'
+                                f'</div>'
+                                for img in images[:4]
+                            ])}
+                        </div>
+                        <div style="font-size: 16px; line-height: 1.6; color: #d1d5db;">
+                            {final_answer}
+                        </div>
+                    </div>
+                    """
+                    
+                    placeholder.markdown(response_html, unsafe_allow_html=True)
+                
+                if answer.get('references'):
+                    display_sources(answer['references'])
+        else:
+            logging.error(f"Unexpected search_results type: {type(search_results)}")
+            st.error("Received unexpected response format. Please try again.")
 
     except Exception as e:
-        st.error(f"Search error: {str(e)}")
-        logging.error(f"Search error: {str(e)}")
-        # Add logging for debugging
-        logging.debug("Debugging web_search: Check if the response is empty or malformed.")
+        logging.error(f"Deployment environment error: {str(e)}")
+        st.error("An unexpected error occurred. Please try again later.")
 
 def display_sources(sources):
     main_sources = sources[:3]
