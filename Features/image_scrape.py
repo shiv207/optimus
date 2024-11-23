@@ -205,7 +205,3 @@ def handle_image_search_and_description(query: str, num_images=4):
                 </div>'''
         image_html += '</div>'
         st.markdown(image_html, unsafe_allow_html=True)
-
-# Example usage
-query = "cats"
-handle_image_search_and_description(query)
