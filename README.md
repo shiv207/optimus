@@ -1,4 +1,4 @@
-Genesis AI ✨
+Genesis AI
 
 Genesis is a state-of-the-art AI model designed for seamless interaction, intelligent assistance, and a touch of charm. Whether you’re looking for insightful answers, creative ideas, or a sprinkle of humor, Genesis is your go-to companion.
 
@@ -22,12 +22,12 @@ Features
 Modes of Operation
 
 Genesis operates in two distinct modes:
-	1.	Regular Mode
-	•	Purpose: Focusing on accuracy, clarity, and efficiency.
-	•	Best for: Practical tasks like research, explanations, and general assistance.
-	2.	Cosmic Perspective Mode
-	•	Purpose: Adds a layer of imaginative flair and cosmic humor.
-	•	Best for: Creative brainstorming, philosophical discussions, and lighthearted fun.
+1.	Regular Mode
+•	Purpose: Focusing on accuracy, clarity, and efficiency.
+•	Best for: Practical tasks like research, explanations, and general assistance.
+2.	Cosmic Perspective Mode
+•	Purpose: Adds a layer of imaginative flair and cosmic humor.
+•	Best for: Creative brainstorming, philosophical discussions, and lighthearted fun.
 
 Personality Highlights
 
@@ -42,16 +42,14 @@ How to Use
 3.	Request Creative Outputs: From writing to image generation, just provide a detailed description.
 4.	Refine Responses: If you need a tweak, ask for adjustments!
 
+Access Genesis AI
+
+You can interact with Genesis AI via the following link:
+Genesis AI on Optimus-eoaw
+
 Customization
 
 •	Themes: Adjust the visual aesthetics of Genesis, choosing from:
 •	Dark Mode: Inspired by vaporwave and Pro Black themes.
 •	Light Mode: Inspired by ‘Happier Than Ever.’
 •	Response Style: Modify the level of wit or professionalism based on your preferences.
-
-Support
-
-If you encounter any issues or have suggestions, feel free to reach out!
-We’re committed to making Genesis smarter, wittier, and even more helpful.
-
-Happy interacting with Genesis! 🚀
