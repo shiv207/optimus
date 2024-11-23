@@ -17,6 +17,7 @@ from modals.genesis import gen_prompt_stream as genesis_prompt_stream, gen_funct
 from modals.discovery_o1 import Perplexity
 from typing import Dict
 from bs4 import BeautifulSoup
+import json
 from urllib.parse import urlparse
 import html
 
