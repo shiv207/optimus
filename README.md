@@ -16,7 +16,7 @@ Welcome to Genesis AI, the chatbot with true freedom! Break the chains with unce
 
 🎤 Experience the Genesis Live!
 
-Genesis AI on Render (https://optimus-egi4.onrender.com)
+Genesis AI on Render (https://optimus-eoaw.onrender.com/)
 
 
 🛠️ Installation Guide
