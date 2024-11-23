@@ -14,13 +14,18 @@ try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
     st.error("""
-    The required spaCy model is not installed. Please run the following command in your terminal:
-    
-    python -m spacy download en_core_web_sm
-    
-    After installation, please restart the application.
+    The required spaCy model is not installed. Attempting to install it...
     """)
-    st.stop()
+    
+    # Try to install the model automatically
+    try:
+        subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
+        # Reload the model after installation
+        nlp = spacy.load("en_core_web_sm")
+        st.success("spaCy model installed successfully!")
+    except subprocess.CalledProcessError as e:
+        st.error(f"Installation failed: {e}")
+        st.stop()
 
 # Load environment variables
 load_dotenv()
