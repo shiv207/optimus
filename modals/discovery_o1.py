@@ -8,7 +8,6 @@ from websocket import WebSocketApp
 from requests import Session
 from PIL import Image
 import requests
-import json
 import aiohttp
 import asyncio
 from io import BytesIO

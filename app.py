@@ -17,10 +17,8 @@ from modals.genesis import gen_prompt_stream as genesis_prompt_stream, gen_funct
 from modals.discovery_o1 import Perplexity
 from typing import Dict
 from bs4 import BeautifulSoup
-import json
 from urllib.parse import urlparse
 import html
-import traceback
 
 
 def generate_image(prompt):
@@ -610,51 +608,49 @@ def streamlit_ui():
 
 def web_search(prompt: str) -> None:
     try:
-        logging.info("Initializing Perplexity client...")
         perplexity = Perplexity()
+        final_answer = ""
+        sources = None
+        images = None
         placeholder = st.empty()
 
-        # Debug API configuration
-        logging.info("Checking API configuration...")
-        if hasattr(perplexity, 'api_key'):
-            logging.info("API key is configured")
-        else:
-            logging.error("API key is missing")
-            st.error("API configuration is incomplete. Please check your environment variables.")
-            return
+        for answer in perplexity.generate_answer(prompt):
+            if "error" in answer:
+                st.error(answer["error"])
+                return
 
-        # Add request debugging
-        logging.info(f"Making API request with prompt length: {len(prompt)}")
-        try:
-            with st.spinner("Searching..."):
-                search_results = perplexity.generate_answer(prompt)
-                logging.info(f"API response received - Type: {type(search_results)}")
+            if answer.get('answer'):
+                final_answer = answer['answer']
+                images = answer.get('images', [])
                 
-                if search_results is None:
-                    logging.error("API returned None response")
-                    st.error("No response from search service. Please try again.")
-                    return
+                response_html = f"""
+                <div style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px;">
+                        {''.join([
+                            f'<div style="aspect-ratio: 1; position: relative;">'
+                            f'<img src="{img}" alt="Search result" '
+                            f'style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">'
+                            f'</div>'
+                            for img in images[:4]
+                        ])}
+                    </div>
+                    <div style="font-size: 16px; line-height: 1.6; color: #d1d5db;">
+                        {final_answer}
+                    </div>
+                </div>
+                """
+                
+                placeholder.markdown(response_html, unsafe_allow_html=True)
+            
+            if answer.get('references'):
+                sources = answer['references']
 
-                # Rest of your processing code...
-
-        except AttributeError as ae:
-            logging.error(f"Perplexity client configuration error: {str(ae)}")
-            st.error("Search service is not properly configured.")
-            return
-        except ConnectionError as ce:
-            logging.error(f"Connection error: {str(ce)}")
-            st.error("Unable to connect to search service. Please check your internet connection.")
-            return
-        except Exception as e:
-            logging.error(f"Search error: {str(e)}, Type: {type(e)}")
-            st.error("Search failed. Please try again later.")
-            return
+        if sources:
+            display_sources(sources)
 
     except Exception as e:
-        logging.error(f"Critical error in web_search: {str(e)}")
-        logging.error(f"Error type: {type(e)}")
-        logging.error(f"Error traceback: {traceback.format_exc()}")
-        st.error("An unexpected error occurred. Please try again later.")
+        st.error(f"Search error: {str(e)}")
+        logging.error(f"Search error: {str(e)}")
 
 def display_sources(sources):
     main_sources = sources[:3]
