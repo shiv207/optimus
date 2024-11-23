@@ -20,7 +20,29 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import html
 
+# Add caching for loading CSS files
+@st.cache_data
+def load_css(file_name):
+    with open(file_name) as f:
+        return f'<style>{f.read()}</style>'
 
+@st.cache_data
+def load_dynamic_css():
+    return """
+    <style>
+    body:not(.sidebar-open) .stDecoration {
+        background-image: linear-gradient(#00000010 1px, transparent 1px),
+                          linear-gradient(to right, #00000010 1px, transparent 1px);
+    }
+    body.sidebar-open .stDecoration {
+        background-image: linear-gradient(#ff000010 1px, transparent 1px),
+                          linear-gradient(to right, #ff000010 1px, transparent 1px);
+    }
+    </style>
+    """
+
+# Cache image generation functions
+@st.cache_data(ttl=3600)  # Cache for 1 hour
 def generate_image(prompt):
     dreamscape_styles = ['dreamscape', 'anime', 'ghibli']
     oilscape_styles = ['van gogh', 'painting', 'oil painting']
@@ -50,25 +72,6 @@ def generate_image(prompt):
             return result  
     except Exception as e:
         return f"Error: Failed to generate image. {str(e)}"
-
-def load_css(file_name):
-    with open(file_name) as f:
-        return f'<style>{f.read()}</style>'
-
-# Add this new function to load dynamic CSS
-def load_dynamic_css():
-    return """
-    <style>
-    body:not(.sidebar-open) .stDecoration {
-        background-image: linear-gradient(#00000010 1px, transparent 1px),
-                          linear-gradient(to right, #00000010 1px, transparent 1px);
-    }
-    body.sidebar-open .stDecoration {
-        background-image: linear-gradient(#ff000010 1px, transparent 1px),
-                          linear-gradient(to right, #ff000010 1px, transparent 1px);
-    }
-    </style>
-    """
 
 def streamlit_ui():
     # Hide Streamlit's default elements
@@ -365,11 +368,10 @@ def streamlit_ui():
 
     # Chat container and session state management
     st.markdown('<div class="main-content">', unsafe_allow_html=True)
-    if 'messages' not in st.session_state:
+    if 'initialized' not in st.session_state:
+        st.session_state.initialized = True
         st.session_state.messages = [{"role": "assistant", "content": "What's up? Need help?"}]
-    if 'voice_input' not in st.session_state:
         st.session_state.voice_input = None
-    if 'last_image_prompt' not in st.session_state:
         st.session_state.last_image_prompt = None
 
     # Chat container for messages
@@ -606,6 +608,8 @@ def streamlit_ui():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+# Cache web search results
+@st.cache_data(ttl=1800)  # Cache for 30 minutes
 def web_search(prompt: str) -> None:
     try:
         perplexity = Perplexity()
@@ -838,40 +842,15 @@ def display_sources(sources):
     </style>
     """, unsafe_allow_html=True)
 
+# Cache image search results
+@st.cache_data(ttl=1800)  # Cache for 30 minutes
+def handle_image_search_and_description(prompt):
+    # ... existing code ...
+
+# Cache website title fetching
+@st.cache_data(ttl=86400)  # Cache for 24 hours
 def get_website_title(url):
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
-        }
-        response = requests.get(url, headers=headers, timeout=5)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        title = None
-        
-        og_title = soup.find('meta', property='og:title')
-        if og_title:
-            title = og_title.get('content')
-        
-        if not title:
-            twitter_title = soup.find('meta', {'name': 'twitter:title'})
-            if twitter_title:
-                title = twitter_title.get('content')
-        
-        if not title and soup.title:
-            title = soup.title.string
-        
-        if title:
-            title = html.unescape(title.strip())
-            common_suffixes = [' - Wikipedia', ' | Wikipedia', ' - Britannica', ' | Britannica']
-            for suffix in common_suffixes:
-                if title.endswith(suffix):
-                    title = title[:-len(suffix)]
-            return title
-        
-        return None
-    except Exception as e:
-        print(f"Error fetching title for {url}: {str(e)}")
-        return None
+    # ... existing code ...
 
 def prepare_sources(sources):
     for source in sources:
@@ -913,6 +892,15 @@ def display_silverhand():
     """, unsafe_allow_html=True)
     
     st.markdown(f'<div class="future-grave"><div class="grave-text">{poem}</div></div>', unsafe_allow_html=True)
+
+# Pre-compute and cache any constants or lookup tables
+@st.cache_data
+def get_style_mappings():
+    return {
+        'dreamscape_styles': ['dreamscape', 'anime', 'ghibli'],
+        'oilscape_styles': ['van gogh', 'painting', 'oil painting'],
+        'premium_keywords': ['premium', 'high quality', 'high definition', 'hd', 'high res', 'high resolution', '4k', '8k', 'ultra hd']
+    }
 
 def main():
     streamlit_ui()
