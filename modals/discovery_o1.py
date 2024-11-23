@@ -87,7 +87,16 @@ class Perplexity:
         }
         self.session.headers.update(self.request_headers)
         self.timestamp: str = format(getrandbits(32), "08x")
-        self.session_id: str = loads(self.session.get(url=f"https://www.perplexity.ai/socket.io/?EIO=4&transport=polling&t={self.timestamp}").text[1:])["sid"]
+        try:
+            response = self.session.get(url=f"https://www.perplexity.ai/socket.io/?EIO=4&transport=polling&t={self.timestamp}")
+            response.raise_for_status()  # Check for HTTP errors
+            response_data = response.text[1:]
+            if not response_data:
+                raise ValueError("Empty response received from server")
+            self.session_id: str = loads(response_data)["sid"]
+        except (requests.exceptions.RequestException, ValueError, KeyError) as e:
+            logging.error(f"Failed to initialize session: {str(e)}")
+            raise ConnectionError("Failed to initialize session with Perplexity AI")
         self.message_counter: int = 1
         self.base_message_number: int = 420
         self.is_request_finished: bool = True
