@@ -9,7 +9,14 @@ from .gen_med import med_prompt_stream, is_medical_query
 load_dotenv()
 
 # Initialize Groq client
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+try:
+    groq_client = Groq(
+        api_key=os.getenv("GROQ_API_KEY"),
+        base_url="https://api.groq.com/v1"
+    )
+except Exception as e:
+    st.error(f"Failed to initialize Groq client: {str(e)}")
+    groq_client = None
 
 # Initialize Nvidia Nemotron client
 nvidia_client = OpenAI(
