@@ -480,6 +480,7 @@ Format the response to work with the Perplexity UI styling, using smaller header
     def _initialize_websocket(self) -> WebSocketApp:
         """
         Initializes the WebSocket connection.
+        Initializes the WebSocket connection.
         """
         def on_open(ws: WebSocketApp) -> None:
             ws.send("2probe")
@@ -493,6 +494,7 @@ Format the response to work with the Perplexity UI styling, using smaller header
                     message_data: Dict[str, Any] = loads(message[2:])
                     content: Dict[str, Any] = message_data[1]
 
+
                     if "mode" in content:
                         try:
                             content.update(loads(content["text"]))
@@ -500,10 +502,13 @@ Format the response to work with the Perplexity UI styling, using smaller header
                         except:
                             pass
 
+
                     if message_data[0] == "query_answered":
                         self.last_request_id = content.get("uuid")
                         self.is_request_finished = True
                         return
+
+                    if "final" in content and content["final"]:
 
                     if "final" in content and content["final"]:
                         self.response_queue.append(content)
@@ -521,11 +526,15 @@ Format the response to work with the Perplexity UI styling, using smaller header
     def generate_answer(self, query: str) -> Generator[Dict[str, Any], None, None]:
         """
         Generates an answer to the given query using Perplexity AI and returns references.
+        Generates an answer to the given query using Perplexity AI and returns references.
         """
         # Reset state
         self.is_request_finished = False
         self.message_counter = (self.message_counter + 1) % 9 or self.base_message_number * 10
         self.response_queue.clear()
+        self.collected_response = {"answer": "", "references": []}
+
+        # Send query
         self.collected_response = {"answer": "", "references": []}
 
         # Send query
@@ -545,17 +554,23 @@ Format the response to work with the Perplexity UI styling, using smaller header
         last_update: float = start_time
         check_interval: float = 0.05
 
+        check_interval: float = 0.05
+
         while (not self.is_request_finished) or self.response_queue:
             current_time = time()
+
+            if current_time - start_time > 20:
 
             if current_time - start_time > 20:
                 self.is_request_finished = True
                 yield {"error": "Timed out."}
                 return
 
+
             while self.response_queue:
                 response = self.response_queue.pop(0)
                 last_update = current_time
+
 
                 if "answer" in response and response["answer"]:
                     self.collected_response["answer"] = response["answer"]
@@ -571,6 +586,7 @@ Format the response to work with the Perplexity UI styling, using smaller header
                         for result in response["web_results"]
                     ]
                     yield self.collected_response.copy()
+
 
             if current_time - last_update > check_interval:
                 sleep(check_interval)
