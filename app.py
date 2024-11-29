@@ -28,6 +28,8 @@ import concurrent.futures
 import json
 from concurrent.futures import ThreadPoolExecutor
 
+print("server started.....")
+
 def generate_image(prompt):
     dreamscape_styles = ['dreamscape', 'anime', 'ghibli']
     oilscape_styles = ['van gogh', 'painting', 'oil painting']

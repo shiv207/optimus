@@ -509,8 +509,6 @@ Format the response to work with the Perplexity UI styling, using smaller header
                         return
 
                     if "final" in content and content["final"]:
-
-                    if "final" in content and content["final"]:
                         self.response_queue.append(content)
 
         cookies: str = "; ".join([f"{key}={value}" for key, value in self.session.cookies.get_dict().items()])
@@ -525,7 +523,6 @@ Format the response to work with the Perplexity UI styling, using smaller header
 
     def generate_answer(self, query: str) -> Generator[Dict[str, Any], None, None]:
         """
-        Generates an answer to the given query using Perplexity AI and returns references.
         Generates an answer to the given query using Perplexity AI and returns references.
         """
         # Reset state
@@ -554,12 +551,8 @@ Format the response to work with the Perplexity UI styling, using smaller header
         last_update: float = start_time
         check_interval: float = 0.05
 
-        check_interval: float = 0.05
-
         while (not self.is_request_finished) or self.response_queue:
             current_time = time()
-
-            if current_time - start_time > 20:
 
             if current_time - start_time > 20:
                 self.is_request_finished = True
