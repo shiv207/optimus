@@ -15,11 +15,7 @@ if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY environment variable is not set. Please set it in your .env file.")
 
 # Initialize httpx client for Render environment
-http_client = httpx.Client(
-    proxies=None,  # Render doesn't require specific proxy settings
-    timeout=60.0,  # Set a reasonable timeout
-    verify=True    # Enable SSL verification
-)
+http_client = httpx.Client(timeout=60.0)
 
 groq_client = Groq(
     api_key=GROQ_API_KEY,
