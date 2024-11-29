@@ -17,8 +17,7 @@ try:
     if not GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY environment variable is not set")
     groq_client = Groq(
-        api_key=GROQ_API_KEY,
-        base_url="https://api.groq.com/v1"
+        api_key=GROQ_API_KEY
     )
 except Exception as e:
     st.error(f"Failed to initialize Groq client: {str(e)}")
