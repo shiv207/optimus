@@ -559,6 +559,8 @@ Format the response to work with the Perplexity UI styling, using smaller header
                 yield {"error": "Timed out."}
                 return
 
+            if current_time - last_update > check_interval:
+                sleep(check_interval)
 
             while self.response_queue:
                 response = self.response_queue.pop(0)
@@ -579,7 +581,3 @@ Format the response to work with the Perplexity UI styling, using smaller header
                         for result in response["web_results"]
                     ]
                     yield self.collected_response.copy()
-
-
-            if current_time - last_update > check_interval:
-                sleep(check_interval)

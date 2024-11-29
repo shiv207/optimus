@@ -13,7 +13,13 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Initialize Groq client
-groq_client = Groq(api_key=GROQ_API_KEY)
+try:
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY environment variable is not set")
+    groq_client = Groq(api_key=GROQ_API_KEY)
+except Exception as e:
+    st.error(f"Failed to initialize Groq client: {str(e)}")
+    groq_client = None
 
 def scrape_images(query, max_results=4):
     """Search for images with guaranteed results."""
@@ -50,6 +56,9 @@ def refine_search_query(query):
 
 def get_brief_description(query):
     """Generate a brief description using Groq."""
+    if groq_client is None:
+        return get_fallback_description(query)
+    
     prompt = f"Tell me a brief description of the object '{query}'."
     try:
         response = groq_client.chat.completions.create(
