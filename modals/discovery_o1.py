@@ -96,19 +96,30 @@ class Perplexity:
         Perform Google search with optimized processing
         """
         try:
-            cache_key = f"search_{hashlib.md5(query.encode()).hexdigest()}"
-            if cache_key in self.url_cache:
-                return self.url_cache[cache_key]
+            if not self.google_api_key or not self.google_cse_id:
+                logging.error("Google API key or Custom Search Engine ID is missing")
+                return []
 
-            search_results = self.google_service.cse().list(
-                q=query,
-                cx=self.google_cse_id,
-                num=num_results,
-                fields="items(title,link,snippet)",
-                safe="active"
-            ).execute()
+            # Add retry mechanism for the API call
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    search_results = self.google_service.cse().list(
+                        q=query,
+                        cx=self.google_cse_id,
+                        num=num_results,
+                        fields="items(title,link,snippet)",
+                        safe="off"  # Remove safe search restriction
+                    ).execute()
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        logging.error(f"Google Search API failed after {max_retries} attempts: {str(e)}")
+                        return []
+                    time.sleep(1)  # Wait before retry
 
             if not search_results.get('items', []):
+                logging.warning(f"No search results found for query: {query}")
                 return []
 
             processed_results = []
@@ -117,28 +128,28 @@ class Perplexity:
                 for item in search_results['items']:
                     url = item.get('link', '')
                     if self._is_valid_url(url):
-                        futures.append(executor.submit(
+                        future = executor.submit(
                             self._process_search_result,
-                            url=url,
-                            title=item.get('title', ''),
-                            snippet=item.get('snippet', '')
-                        ))
+                            url,
+                            item.get('title', ''),
+                            item.get('snippet', '')
+                        )
+                        futures.append(future)
 
+                # Collect results, skipping any that failed
                 for future in futures:
                     try:
-                        result = future.result()
+                        result = future.result(timeout=10)
                         if result:
                             processed_results.append(result)
                     except Exception as e:
                         logging.error(f"Error processing search result: {str(e)}")
+                        continue
 
-            # Sort results by score
-            processed_results.sort(key=self._calculate_result_score, reverse=True)
-            self.url_cache[cache_key] = processed_results
             return processed_results
 
         except Exception as e:
-            logging.error(f"Google Search Error: {str(e)}")
+            logging.error(f"Error in google_search: {str(e)}")
             return []
 
     def duckduckgo_image_search(self, query: str, num_results: int = 8) -> List[Dict]:
@@ -406,13 +417,21 @@ Format the response to work with the Perplexity UI styling, using smaller header
             return f"An error occurred while generating the response: {str(e)}"
 
     def _is_valid_url(self, url: str) -> bool:
-        """
-        Check if a URL is valid
-        """
+        """Check if a URL is valid and accessible"""
         try:
-            result = urlparse(url)
-            return all([result.scheme, result.netloc])
-        except ValueError:
+            parsed = urlparse(url)
+            if not all([parsed.scheme, parsed.netloc]):
+                return False
+                
+            # Skip certain problematic domains
+            if any(domain in parsed.netloc.lower() for domain in [
+                'instagram.com', 'facebook.com', 'twitter.com', 
+                'linkedin.com', 'youtube.com'
+            ]):
+                return False
+
+            return True
+        except Exception:
             return False
 
     def _process_search_result(self, url: str, title: str, snippet: str) -> Dict:
@@ -437,29 +456,67 @@ Format the response to work with the Perplexity UI styling, using smaller header
         try:
             # Skip problematic URLs
             parsed_url = urlparse(url)
-            if any(domain in parsed_url.netloc for domain in ['instagram.com', 'facebook.com', 'twitter.com']):
+            if any(domain in parsed_url.netloc.lower() for domain in [
+                'instagram.com', 'facebook.com', 'twitter.com', 'linkedin.com',
+                'youtube.com', 'tiktok.com', 'reddit.com'
+            ]):
                 return ""
 
-            # Use session for requests
-            response = self.session.get(url, timeout=10, verify=False)
+            # Check cache first
+            cache_key = hashlib.md5(url.encode()).hexdigest()
+            if cache_key in self.url_cache:
+                cached_data = self.url_cache[cache_key]
+                if time.time() - cached_data['timestamp'] < self.cache_ttl:
+                    return cached_data['content']
+
+            # Use session for requests with shorter timeout
+            response = self.session.get(
+                url,
+                timeout=5,
+                verify=False,
+                allow_redirects=True
+            )
             response.raise_for_status()
 
+            # Check content type
+            content_type = response.headers.get('content-type', '').lower()
+            if not content_type.startswith('text/html'):
+                return ""
+
             # Use lxml parser for better performance
-            soup = BeautifulSoup(response.text, 'lxml')
+            soup = BeautifulSoup(response.content, 'lxml')
 
             # Remove unwanted elements
-            for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'iframe']):
+            for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'iframe', 'aside', 'noscript']):
                 tag.decompose()
 
-            # Extract text content
-            text = ' '.join(p.get_text().strip() for p in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']))
-            
-            # Clean and normalize text
+            # Focus on main content areas
+            main_content = soup.find(['main', 'article', 'div[role="main"]']) or soup
+
+            # Extract text content with better formatting
+            paragraphs = []
+            for p in main_content.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                text = p.get_text().strip()
+                if len(text) > 20:  # Skip very short snippets
+                    paragraphs.append(text)
+
+            # Join paragraphs and clean text
+            text = ' '.join(paragraphs)
             text = re.sub(r'\s+', ' ', text).strip()
+            text = re.sub(r'[^\x00-\x7F]+', '', text)  # Remove non-ASCII characters
             
-            # Truncate to max length while keeping whole words
+            # Truncate to max length while keeping whole sentences
             if len(text) > max_length:
-                text = text[:max_length].rsplit(' ', 1)[0]
+                text = text[:max_length]
+                last_period = text.rfind('.')
+                if last_period > 0:
+                    text = text[:last_period + 1]
+
+            # Cache the result
+            self.url_cache[cache_key] = {
+                'content': text,
+                'timestamp': time.time()
+            }
 
             return text
 
