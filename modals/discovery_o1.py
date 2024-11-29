@@ -560,8 +560,6 @@ Format the response to work with the Perplexity UI styling, using smaller header
             current_time = time()
 
             if current_time - start_time > 20:
-
-            if current_time - start_time > 20:
                 self.is_request_finished = True
                 yield {"error": "Timed out."}
                 return
