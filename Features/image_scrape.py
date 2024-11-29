@@ -5,8 +5,9 @@ import os
 from dotenv import load_dotenv
 import json
 from groq import Groq
-from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 import nltk
+import httpx
 
 # Load environment variables
 load_dotenv()
@@ -16,8 +17,16 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY environment variable is not set. Please set it in your .env file.")
 
+# Initialize httpx client for Render environment
+http_client = httpx.Client(
+    proxies=None,  # Render doesn't require specific proxy settings
+    timeout=60.0,  # Set a reasonable timeout
+    verify=True    # Enable SSL verification
+)
+
 groq_client = Groq(
-    api_key=GROQ_API_KEY
+    api_key=GROQ_API_KEY,
+    http_client=http_client
 )
 
 def scrape_images(query, max_results=4):
@@ -192,7 +201,7 @@ def handle_image_search_and_description(query: str, num_images=4):
     """Handle both image searching and description generation."""
     apply_custom_css()
     
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         future_description = executor.submit(get_brief_description, query)
         future_images = executor.submit(scrape_images, query, num_images)
         

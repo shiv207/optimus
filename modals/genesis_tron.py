@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from .gen_med import is_medical_query, med_prompt_stream
+import httpx
 
 # Load environment variables
 load_dotenv()
@@ -13,7 +14,17 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY environment variable is not set. Please set it in your .env file.")
 
-groq_client = Groq(api_key=GROQ_API_KEY)
+# Initialize httpx client for Render environment
+http_client = httpx.Client(
+    proxies=None,  # Render doesn't require specific proxy settings
+    timeout=60.0,  # Set a reasonable timeout
+    verify=True    # Enable SSL verification
+)
+
+groq_client = Groq(
+    api_key=GROQ_API_KEY,
+    http_client=http_client
+)
 
 # Initialize Nvidia Nemotron client
 nvidia_client = OpenAI(
