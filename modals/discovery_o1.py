@@ -1,4 +1,15 @@
-from typing import Dict, Generator, List, Any, Optional
+import os
+import logging
+import re
+from urllib.parse import urlparse, urljoin
+from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup
+from typing import List, Dict, Set, Generator, Any
+from concurrent.futures import ThreadPoolExecutor
+import functools
+import hashlib
+import time
 from uuid import uuid4
 from time import sleep, time
 from threading import Thread
@@ -6,116 +17,469 @@ from json import loads, dumps
 from random import getrandbits
 from websocket import WebSocketApp
 from requests import Session
-from PIL import Image
-import requests
-import aiohttp
-import asyncio
-from io import BytesIO
-from dataclasses import dataclass
-from duckduckgo_search import DDGS
-from functools import lru_cache
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from newsapi import NewsApiClient
+from datetime import datetime, timedelta
+import json
 
-@dataclass
-class ImageResult:
-    url: str
-    title: str
-    source_url: str
-    width: Optional[int] = None
-    height: Optional[int] = None
-    format: Optional[str] = None
-    
-class ImageFilter:
-    def __init__(self):
-        self.min_dimensions = (200, 200)  # Minimum width/height
-        self.max_file_size = 5 * 1024 * 1024  # 5MB
-        self.allowed_formats = {'JPEG', 'PNG', 'WebP'}
-        self._session = None
-        self._cache = {}
-        
-    async def get_session(self):
-        if self._session is None:
-            self._session = aiohttp.ClientSession()
-        return self._session
-        
-    @lru_cache(maxsize=100)
-    async def validate_image(self, image_url: str) -> bool:
-        # Check cache first
-        if image_url in self._cache:
-            return self._cache[image_url]
-            
-        try:
-            session = await self.get_session()
-            async with session.get(image_url, timeout=3) as response:
-                if response.status != 200:
-                    return False
-                    
-                content = await response.read()
-                
-                # Quick checks first
-                if len(content) > self.max_file_size:
-                    return False
-                    
-                # Validate image properties
-                img = Image.open(BytesIO(content))
-                if img.format not in self.allowed_formats:
-                    return False
-                if img.size[0] < self.min_dimensions[0] or img.size[1] < self.min_dimensions[1]:
-                    return False
-                    
-                # Cache the result
-                self._cache[image_url] = True
-                return True
-        except:
-            self._cache[image_url] = False
-            return False
-            
-    async def validate_images_parallel(self, image_urls: List[str]) -> List[bool]:
-        tasks = [self.validate_image(url) for url in image_urls]
-        return await asyncio.gather(*tasks)
-        
+# Google Search API
+from googleapiclient.discovery import build
+
+# NVIDIA OpenAI-compatible client
+from openai import OpenAI
+
+# DuckDuckGo image search
+from duckduckgo_search import DDGS
+
 class Perplexity:
-    """
-    A client for interacting with the Perplexity AI API.
-    """
-    def __init__(self, *args, **kwargs) -> None:
-        self.session: Session = Session()
-        self.request_headers: Dict[str, str] = {
-            "Sec-Fetch-User": "?1",
-            "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-        }
-        self.session.headers.update(self.request_headers)
-        self.timestamp: str = format(getrandbits(32), "08x")
-        self.session_id: str = loads(self.session.get(url=f"https://www.perplexity.ai/socket.io/?EIO=4&transport=polling&t={self.timestamp}").text[1:])["sid"]
-        self.message_counter: int = 1
-        self.base_message_number: int = 420
-        self.is_request_finished: bool = True
-        self.last_request_id: str = None
-        self.response_queue: List[Dict[str, Any]] = []
-        self.collected_response: Dict[str, Any] = {"answer": "", "references": [], "images": []}
+    def __init__(self) -> None:
+        # Load environment variables
+        load_dotenv()
         
-        # Initialize websocket and event loop
-        assert (lambda: self.session.post(url=f"https://www.perplexity.ai/socket.io/?EIO=4&transport=polling&t={self.timestamp}&sid={self.session_id}", data='40{"jwt":"anonymous-ask-user"}').text == "OK")(), "Failed to ask the anonymous user."
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        self.websocket: WebSocketApp = self._initialize_websocket()
-        self.websocket_thread: Thread = Thread(target=self.websocket.run_forever).start()
+        # Configure NVIDIA OpenAI client
+        self.client = OpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=os.getenv('NVIDIA_API_KEY')
+        )
         
-        # Initialize components with connection pooling
-        self.ddgs = DDGS()
-        self.image_filter = ImageFilter()
-        self.aiohttp_session = None
+        # Configure Google Custom Search
+        self.google_api_key = os.getenv('GOOGLE_API_KEY')
+        self.google_cse_id = os.getenv('SEARCH_ENGINE_ID')
         
-        # Wait for websocket connection
-        start = time()
-        while not (self.websocket.sock and self.websocket.sock.connected):
-            sleep(0.05)  # Reduced sleep time
-            if time() - start > 5:  # Added timeout
-                raise ConnectionError("WebSocket connection timeout")
+        # Initialize News API
+        self.newsapi = NewsApiClient(api_key=os.getenv('NEWS_API_KEY'))
+        
+        # Initialize Google Custom Search service
+        self.google_service = build("customsearch", "v1", developerKey=self.google_api_key)
+        
+        # Advanced caching system with TTL
+        self.url_cache = {}
+        self.cache_ttl = 3600  # 1 hour cache lifetime
+        
+        # Thread pool for parallel processing
+        self.executor = ThreadPoolExecutor(max_workers=10)
+        
+        # Enhanced session with retry mechanism
+        self.session = self._create_session_with_retry()
+        
+        # Add DuckDuckGo session
+        self.ddg = DDGS()
+
+    def _create_session_with_retry(self):
+        session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[500, 502, 503, 504]
+        )
+        session.mount('https://', HTTPAdapter(max_retries=retries))
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5"
+        })
+        return session
+
+    def google_search(self, query: str, num_results: int = 8) -> List[Dict]:
+        """
+        Perform Google search with optimized processing
+        """
+        try:
+            cache_key = f"search_{hashlib.md5(query.encode()).hexdigest()}"
+            if cache_key in self.url_cache:
+                return self.url_cache[cache_key]
+
+            search_results = self.google_service.cse().list(
+                q=query,
+                cx=self.google_cse_id,
+                num=num_results,
+                fields="items(title,link,snippet)",
+                safe="active"
+            ).execute()
+
+            if not search_results.get('items', []):
+                return []
+
+            processed_results = []
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                futures = []
+                for item in search_results['items']:
+                    url = item.get('link', '')
+                    if self._is_valid_url(url):
+                        futures.append(executor.submit(
+                            self._process_search_result,
+                            url=url,
+                            title=item.get('title', ''),
+                            snippet=item.get('snippet', '')
+                        ))
+
+                for future in futures:
+                    try:
+                        result = future.result()
+                        if result:
+                            processed_results.append(result)
+                    except Exception as e:
+                        logging.error(f"Error processing search result: {str(e)}")
+
+            # Sort results by score
+            processed_results.sort(key=self._calculate_result_score, reverse=True)
+            self.url_cache[cache_key] = processed_results
+            return processed_results
+
+        except Exception as e:
+            logging.error(f"Google Search Error: {str(e)}")
+            return []
+
+    def duckduckgo_image_search(self, query: str, num_results: int = 8) -> List[Dict]:
+        """
+        Perform image search using DuckDuckGo
+        """
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            # Construct the DuckDuckGo image search URL
+            search_url = f"https://duckduckgo.com/?q={query}&iax=images&ia=images"
+            
+            # Get the search page
+            response = requests.get(search_url, headers=headers)
+            response.raise_for_status()
+            
+            # Extract the vqd parameter needed for the API request
+            vqd_match = re.search(r'vqd="([^"]+)"', response.text)
+            if not vqd_match:
+                return []
+            vqd = vqd_match.group(1)
+            
+            # Make the actual API request
+            api_url = f"https://duckduckgo.com/i.js?q={query}&o=json&vqd={vqd}"
+            api_response = requests.get(api_url, headers=headers)
+            api_response.raise_for_status()
+            
+            # Parse the results
+            results = api_response.json().get('results', [])[:num_results]
+            
+            # Format the results
+            image_results = []
+            for result in results:
+                image_results.append({
+                    'title': result.get('title', 'Image'),
+                    'image_url': result.get('image'),
+                    'context_url': result.get('url'),
+                    'thumbnail': result.get('thumbnail')
+                })
+            
+            return image_results
+            
+        except Exception as e:
+            logging.error(f"DuckDuckGo Image Search Error: {str(e)}")
+            return []
+
+    def search_images(self, query: str, max_results: int = 4) -> List[Dict]:
+        """
+        Search for images using DuckDuckGo
+        """
+        try:
+            images = list(self.ddg.images(
+                query,
+                max_results=max_results,
+                safesearch='on'
+            ))
+            
+            return [{
+                'url': img['image'],
+                'thumbnail': img.get('thumbnail', img['image']),
+                'title': img.get('title', ''),
+                'source': img.get('url', '')
+            } for img in images]
+        except Exception as e:
+            logging.error(f"Image Search Error: {str(e)}")
+            return []
+
+    def fetch_news_articles(self, query: str, days_back: int = 3) -> List[Dict]:
+        """
+        Fetch and format recent news articles
+        """
+        try:
+            from_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+            
+            news_results = self.newsapi.get_everything(
+                q=query,
+                from_param=from_date,
+                language='en',
+                sort_by='relevancy',
+                page_size=3  # Reduced for faster response
+            )
+            
+            if not news_results.get('articles'):
+                return []
                 
+            processed_news = []
+            for article in news_results['articles']:
+                # Format the date nicely
+                published_date = datetime.strptime(
+                    article.get('publishedAt', ''), 
+                    '%Y-%m-%dT%H:%M:%SZ'
+                ).strftime('%B %d, %Y')
+                
+                # Clean and format the content
+                content = article.get('content', '').split('[')[0].strip()  # Remove [...chars] suffix
+                if not content:
+                    content = article.get('description', '')
+                
+                processed_news.append({
+                    'title': article.get('title', '').split(' - ')[0],  # Remove source suffix
+                    'url': article.get('url', ''),
+                    'description': article.get('description', ''),
+                    'source': article.get('source', {}).get('name', ''),
+                    'published_at': published_date,
+                    'content': content
+                })
+                
+            return processed_news
+            
+        except Exception as e:
+            logging.error(f"News API Error: {str(e)}")
+            return []
+
+    def fetch_search_results(self, query: str) -> Dict:
+        """
+        Optimized fetch_search_results with parallel processing
+        """
+        try:
+            # Check cache first
+            cache_key = hashlib.md5(query.encode()).hexdigest()
+            if cache_key in self.url_cache:
+                return self.url_cache[cache_key]
+            
+            # Parallel execution of searches with reduced timeout
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                # Submit searches with timeouts
+                google_future = executor.submit(self.google_search, query, num_results=3)  # Reduced results
+                news_future = executor.submit(self.fetch_news_articles, query, days_back=1)  # Reduced days
+                
+                # Get results with timeout
+                search_results = google_future.result(timeout=5)
+                news_results = news_future.result(timeout=3)
+            
+            if not search_results and not news_results:
+                return {
+                    'response': "No relevant information found. Please try rephrasing your question.",
+                    'search_results': [],
+                    'news_results': []
+                }
+            
+            # Combine and format results
+            formatted_results = []
+            
+            # Add news results first for recency (limit to 2)
+            for news in news_results[:2]:
+                formatted_results.append({
+                    'url': news['url'],
+                    'title': news['title'],
+                    'hostname': urlparse(news['url']).netloc,
+                    'content': news.get('content', ''),
+                    'is_news': True,
+                    'published_at': news['published_at']
+                })
+            
+            # Add regular search results (limit to 3)
+            for result in search_results[:3]:
+                formatted_results.append({
+                    'url': result['url'],
+                    'title': result['title'],
+                    'hostname': result['hostname'],
+                    'content': result.get('content', ''),
+                    'is_news': False
+                })
+            
+            # Generate response
+            response = self.generate_response(query, formatted_results)
+            
+            result = {
+                'response': response,
+                'search_results': formatted_results,
+                'news_results': news_results[:2]
+            }
+            
+            # Cache the result
+            self.url_cache[cache_key] = result
+            return result
+            
+        except Exception as e:
+            logging.error(f"Search Result Fetching Error: {str(e)}")
+            return {
+                'response': "An error occurred. Please try again.",
+                'search_results': [],
+                'news_results': []
+            }
+
+    def generate_response(self, query: str, search_results: List[Dict]) -> str:
+        """
+        Enhanced response generation with news awareness
+        """
+        try:
+            # Separate news and regular content
+            news_sources = [result for result in search_results if result.get('is_news', False)]
+            regular_sources = [result for result in search_results if not result.get('is_news', False)]
+            
+            # Format sources with priority on recent news
+            formatted_sources = []
+            
+            # Add recent news first
+            for i, news in enumerate(news_sources):
+                formatted_sources.append(
+                    f"Recent News {i+1}: {news.get('content', '')} "
+                    f"(Published: {news.get('published_at', '')})"
+                )
+            
+            # Add regular sources
+            for i, result in enumerate(regular_sources):
+                formatted_sources.append(f"Source {i+1}: {result.get('content', '')}")
+            
+            # Join all sources
+            all_sources = "\n\n".join(formatted_sources)
+            
+            prompt = f"""
+You are a highly skilled AI assistant known for producing responses in the style of Perplexity. Answer the query below with a comprehensive, well-structured response based on the provided content. Pay special attention to recent news and current events.
+
+Query: {query}
+
+Content:
+{all_sources}
+
+Guidelines for response structure:
+1. Format the response in clean HTML with proper styling classes:
+   - Use <div class="perplexity-response"> as the main container
+   - Use <h3 class="section-header"> for section headers
+   - Use <p class="perplexity-paragraph"> for paragraphs
+   - Use <ul class="perplexity-list"> for lists
+   - Use <li> for list items
+
+2. Content organization:
+   - If recent news exists, start with the latest developments
+   - Provide specific dates and times for news events
+   - Include relevant statistics and data
+   - End with broader context or background information
+   - Do not mention or reference sources directly
+
+3. Writing style:
+   - Professional and authoritative tone
+   - Clear and concise language
+   - Proper HTML formatting
+   - Logical flow between sections
+   - Emphasize recency when discussing current events
+
+Format the response to work with the Perplexity UI styling, using smaller headers and no source references.
+"""
+            # Generate response with lower temperature for more accuracy
+            completion = self.client.chat.completions.create(
+                model="nvidia/llama3-chatqa-1.5-70b",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,  # Lower temperature for more focused responses
+                top_p=0.7,
+                max_tokens=1024
+            )
+            
+            response = completion.choices[0].message.content.strip()
+            
+            # Ensure proper formatting
+            if not response.startswith('<div class="perplexity-response">'):
+                response = f'<div class="perplexity-response">{response}</div>'
+            
+            return response
+            
+        except Exception as e:
+            logging.error(f"Response Generation Error: {str(e)}")
+            return f"An error occurred while generating the response: {str(e)}"
+
+    def _is_valid_url(self, url: str) -> bool:
+        """
+        Check if a URL is valid
+        """
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except ValueError:
+            return False
+
+    def _process_search_result(self, url: str, title: str, snippet: str) -> Dict:
+        """
+        Process a single search result
+        """
+        try:
+            content = self._extract_page_content(url)
+            
+            return {
+                'title': title,
+                'url': url,
+                'description': snippet,
+                'hostname': urlparse(url).netloc,
+                'content': content
+            }
+        except Exception:
+            return None
+
+    def _extract_page_content(self, url: str, max_length: int = 2000) -> str:
+        """
+        Optimized content extraction with faster parsing
+        """
+        try:
+            cache_key = hashlib.md5(url.encode()).hexdigest()
+            if cache_key in self.url_cache:
+                return self.url_cache[cache_key]
+
+            # Set shorter timeout
+            response = self.session.get(url, timeout=3, verify=False)
+            response.raise_for_status()
+            
+            # Use lxml parser for faster parsing
+            soup = BeautifulSoup(response.text, 'lxml')
+            
+            # Remove unwanted elements
+            for tag in ('script', 'style', 'nav', 'header', 'footer'):
+                for element in soup.find_all(tag):
+                    element.decompose()
+            
+            # Extract text
+            paragraphs = soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+            content = ' '.join(p.get_text(strip=True) for p in paragraphs)
+            
+            # Truncate if needed
+            if len(content) > max_length:
+                content = content[:max_length] + '...'
+            
+            # Cache content
+            self.url_cache[cache_key] = content
+            return content
+
+        except Exception as e:
+            logging.error(f"Content Extraction Error for {url}: {str(e)}")
+            return ''
+
+    def _calculate_result_score(self, result: Dict) -> float:
+        """
+        Calculate result score with optimized scoring
+        """
+        score = 0.0
+        
+        # Title relevance (weighted heavily)
+        score += len(result.get('title', '').split()) * 2
+        
+        # Snippet quality
+        score += len(result.get('description', '').split())
+        
+        # HTTPS bonus
+        if result.get('url', '').startswith('https'):
+            score += 5
+            
+        return score
+
     def _initialize_websocket(self) -> WebSocketApp:
         """
-        Initializes the WebSocket connection with optimized message handling
+        Initializes the WebSocket connection.
         """
         def on_open(ws: WebSocketApp) -> None:
             ws.send("2probe")
@@ -128,34 +492,21 @@ class Perplexity:
                 if message.startswith("42"):
                     message_data: Dict[str, Any] = loads(message[2:])
                     content: Dict[str, Any] = message_data[1]
-                    
-                    # Process message data more efficiently
+
                     if "mode" in content:
                         try:
                             content.update(loads(content["text"]))
                             content.pop("text", None)
                         except:
                             pass
-                            
-                    # Fast-path for completed status
+
                     if message_data[0] == "query_answered":
                         self.last_request_id = content.get("uuid")
                         self.is_request_finished = True
                         return
-                        
-                    # Only queue relevant updates
-                    if ("final" not in content or not content["final"]) or \
-                       ("status" in content and content["status"] == "completed"):
+
+                    if "final" in content and content["final"]:
                         self.response_queue.append(content)
-                        
-                elif message.startswith("43"):
-                    try:
-                        message_data: List[Dict[str, Any]] = loads(message[3:])[0]
-                        if ("uuid" not in message_data or message_data["uuid"] != self.last_request_id):
-                            self.response_queue.append(message_data)
-                            self.is_request_finished = True
-                    except:
-                        pass
 
         cookies: str = "; ".join([f"{key}={value}" for key, value in self.session.cookies.get_dict().items()])
         return WebSocketApp(
@@ -167,65 +518,17 @@ class Perplexity:
             on_error=lambda ws, err: print(f"WebSocket error: {err}")
         )
 
-    def search_images(self, query: str) -> List[str]:
-        """
-        Search for images using DuckDuckGo with parallel validation
-        """
-        try:
-            # Run the async search in the event loop
-            return self.loop.run_until_complete(self._search_images_async(query))
-        except Exception as e:
-            print(f"Image search error: {str(e)}")
-            return ["https://via.placeholder.com/400x300?text=No+Image"] * 4
-
-    async def _search_images_async(self, query: str) -> List[str]:
-        """
-        Async implementation of image search
-        """
-        try:
-            results = list(self.ddgs.images(
-                query,
-                max_results=12,  # Request more initially for better filtering
-            ))
-            
-            # Extract image URLs
-            image_urls = [result.get('image') for result in results if result.get('image')]
-            
-            # Validate images in parallel
-            valid_images = []
-            if image_urls:
-                validation_results = await self.image_filter.validate_images_parallel(image_urls)
-                valid_images = [url for url, is_valid in zip(image_urls, validation_results) if is_valid]
-            
-            # Pad with placeholder images if needed
-            while len(valid_images) < 4:
-                valid_images.append("https://via.placeholder.com/400x300?text=No+Image")
-            
-            return valid_images[:4]
-        except Exception as e:
-            print(f"Image search error: {str(e)}")
-            return ["https://via.placeholder.com/400x300?text=No+Image"] * 4
-
     def generate_answer(self, query: str) -> Generator[Dict[str, Any], None, None]:
         """
-        Generates an answer to the given query using Perplexity AI and returns references and images.
-        Uses optimized parallel processing and streaming.
+        Generates an answer to the given query using Perplexity AI and returns references.
         """
         # Reset state
         self.is_request_finished = False
         self.message_counter = (self.message_counter + 1) % 9 or self.base_message_number * 10
         self.response_queue.clear()
-        self.collected_response = {"answer": "", "references": [], "images": []}
-        
-        # Start image search in parallel with query
-        image_future = self.loop.run_until_complete(
-            asyncio.gather(
-                self._search_images_async(query),
-                return_exceptions=True
-            )
-        )
-        
-        # Send query immediately without waiting for images
+        self.collected_response = {"answer": "", "references": []}
+
+        # Send query
         self.websocket.send(str(self.base_message_number + self.message_counter) + dumps(
             ["perplexity_ask", query, {
                 "frontend_session_id": str(uuid4()),
@@ -240,37 +543,24 @@ class Perplexity:
         # Initialize response tracking
         start_time: float = time()
         last_update: float = start_time
-        check_interval: float = 0.05  # Reduced from default 0.1
-        
-        # Process responses with timeout handling
+        check_interval: float = 0.05
+
         while (not self.is_request_finished) or self.response_queue:
             current_time = time()
-            
-            # Check for timeout
-            if current_time - start_time > 20:  # Reduced timeout
+
+            if current_time - start_time > 20:
                 self.is_request_finished = True
                 yield {"error": "Timed out."}
                 return
-                
-            # Process available responses
+
             while self.response_queue:
                 response = self.response_queue.pop(0)
                 last_update = current_time
-                
-                # Update collected response
+
                 if "answer" in response and response["answer"]:
                     self.collected_response["answer"] = response["answer"]
-                    
-                    # Add images if available
-                    if not self.collected_response["images"] and image_future:
-                        try:
-                            self.collected_response["images"] = image_future[0]
-                        except:
-                            self.collected_response["images"] = ["https://via.placeholder.com/400x300?text=No+Image"] * 4
-                            
                     yield self.collected_response.copy()
 
-                # Process web results
                 if "web_results" in response:
                     self.collected_response["references"] = [
                         {
@@ -281,9 +571,6 @@ class Perplexity:
                         for result in response["web_results"]
                     ]
                     yield self.collected_response.copy()
-            
-            # Small sleep to prevent CPU spinning
+
             if current_time - last_update > check_interval:
                 sleep(check_interval)
-
-        self.websocket.close()

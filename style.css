@@ -62,6 +62,10 @@ footer {visibility: hidden;}
     transition: transform 0.3s ease;
 }
 
+.st-emotion-cache-hzygls {
+    background-color: transparent;
+}
+
 /* Strobe effect */
 @keyframes strobe {
     0% { opacity: 1; }
@@ -99,6 +103,7 @@ footer {visibility: hidden;}
     transform: scale(1.03);
     box-shadow: 0 6px 12px rgba(23, 23, 23, 0.944);
 }
+
 
 /* Chat Area Styles */
 .stChatMessage {
@@ -501,132 +506,6 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 }
 
-
-/* IOS Design */
-@media (max-width: 768px) {
-    body, .stApp {
-        font-size: 16px;
-        opacity: 0.95; /* Increased overall opacity for better visibility */
-    }
-
-    .header-container {
-        background-color: rgba(255, 255, 255, 0.9); /* Light background with increased opacity */
-        position: fixed;
-        top: 20px; /* Reduced from default to move header up */
-        left: 0;
-        right: 0;
-        z-index: 1000;
-    }
-
-    .header-content {
-        padding-top: 5px; /* Reduced padding to move content up */
-        padding-bottom: 5px;
-    }
-
-    .header-content h1 {
-        font-size: 28px;
-        margin-top: 0; /* Remove top margin to move text up */
-        opacity: 1; /* Ensure header text is fully opaque */
-    }
-
-    /* Fixed Grid Layout */
-    .fixed-grid {
-        position: fixed; /* Ensure it stays at the bottom */
-        bottom: 0; /* Position it at the bottom */
-        height: 150px; /* Increased height for a bigger grid */
-        width: 100%; /* Full width for the grid */
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsive grid */
-        gap: 10px; /* Space between grid items */
-        padding: 10px; /* Padding around the grid */
-        opacity: 1;
-        z-index: 0;
-        pointer-events: auto; /* Allow interactions */
-        overflow: hidden; /* Hide overflow */
-    }
-
-    .fixed-grid svg path {
-        stroke: #ffffff;
-        opacity: 0.8; /* Increased opacity for SVG paths */
-    }
-
-    .avatar-icon {
-        width: 30px;
-        height: 30px;
-        opacity: 1; /* Ensure avatar icons are fully opaque */
-    }
-
-    .stImage > img {
-        object-fit: cover;
-        width: 100%;
-        height: auto;
-        max-height: 300px; 
-        opacity: 1; /* Ensure images are fully opaque */
-    }
-
-    .stChatFloatingInputContainer {
-        padding: 10px;
-        bottom: 10px;
-        background-color: rgba(255, 255, 255, 0.9); /* Increased opacity for input container */
-    }
-
-    .stChatInputContainer {
-        padding: 8px 12px;
-        border-radius: 20px;
-        background-color: rgba(255, 255, 255, 0.9); /* Increased opacity for input container */
-    }
-
-    .stChatInputContainer input {
-        font-size: 14px;
-        opacity: 1; /* Ensure input fields are fully opaque */
-    }
-
-    .stChatMessage {
-        max-width: 100%;
-        padding: 12px;
-        margin-bottom: 15px;
-        border-radius: 15px;
-        background-color: rgba(255, 255, 255, 0.9); /* Increased opacity for chat messages */
-    }
-
-    .stChatMessage[data-testid="user-message"] {
-        margin-left: auto;
-        margin-right: 0;
-    }
-
-    .stChatMessage[data-testid="assistant-message"] {
-        margin-left: 0;
-        margin-right: auto;
-    }
-
-    .stChatMessageContent {
-        margin-bottom: 70px;
-    }
-
-    /* Adjust main content to account for higher header */
-    .main .block-container {
-        padding-top: 60px; /* Reduced to account for higher header */
-    }
-}
-
-/* Dark theme adjustments */
-@media (max-width: 768px) and (prefers-color-scheme: dark) {
-    body, .stApp {
-        background-color: #000000;
-        color: #ffffff;
-        opacity: 0.95; /* Increased opacity for dark mode */
-    }
-
-    .stChatInputContainer {
-        background-color: rgba(26, 26, 26, 0.9); /* Increased opacity for dark mode input */
-        border: 1px solid #333333;
-    }
-
-    .stChatMessage {
-        background-color: rgba(26, 26, 26, 0.9); /* Increased opacity for dark mode chat messages */
-    }
-}
-
 /* Remove Streamlit elements */
 #MainMenu, footer, header {
     visibility: hidden;
@@ -805,6 +684,14 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
         border-right: 1px solid #dcdcdc; /* Subtle border */
         box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
         padding: 20px; /* Increased padding for better spacing */
+    }
+
+    div[class="st-ay st-az st-b0 st-b1 st-b2 st-b3 st-b4 st-ae st-b5 st-b6 st-b7 st-b8 st-b9 st-ba st-bb st-bc st-bd st-be st-bf st-bg"] {
+        background-color: black !important;
+    }
+
+    .st-emotion-cache-128upt6.ea3mdgi6 {
+        background-color: transparent !important;
     }
 
     /* Sidebar Content */
@@ -1333,7 +1220,7 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 
 .sidebar-header h2 {
     font-size: 1.6rem;
-    margin-left: 0.3cm;
+    margin-left: 3cm;
     color: #ffffff;
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1);
     transition: text-shadow 0.3s ease;
@@ -1343,35 +1230,20 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.4), 0 0 30px rgba(255, 255, 255, 0.3), 0 0 45px rgba(255, 255, 255, 0.2);
 }
 
-/* Light Theme */
+/* Light Theme Adjustment */
 @media (prefers-color-scheme: light) {
-    .stRadio > div {
-        background: rgba(255, 255, 255, 0.9) !important;  /* Light background */
-        border: 1px solid rgba(0, 0, 0, 0.15);  /* Dark border */
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);  /* Dark shadow */
-    }
-
-    .stRadio > div > label {
-        color: rgba(0, 0, 0, 0.8);  /* Dark text */
-        border: 1px solid rgba(0, 0, 0, 0.1);  /* Dark border */
-    }
-
-    .stRadio > div > label[data-selected="true"] {
-        color: rgb(0, 0, 0);  /* Dark text for selected */
-        border: 1px solid rgba(0, 0, 0, 0.3);  /* Dark border for selected */
-        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1),
-                    0 0 15px rgba(138, 43, 226, 0.2);
-        text-shadow: none;  /* Remove text shadow */
-    }
-
-    .stRadio > div > label:not([data-selected="true"]):hover {
-        background: rgba(0, 0, 0, 0.05);  /* Dark hover effect */
-        color: rgba(0, 0, 0, 0.9);  /* Dark hover text */
-    }
-
     .sidebar-header h2 {
+        margin-left: 3cm;
         color: #000000;  /* Dark text for header */
         text-shadow: none;  /* Remove text shadow */
+    }
+}
+
+/* iOS Specific Adjustments */
+@media (max-width: 768px) {
+    .sidebar-header h2 {
+        margin-left: 3cm;
+        font-size: 1.2rem;
     }
 }
 
@@ -1412,18 +1284,192 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
 
 /* Light theme adjustments */
 @media (prefers-color-scheme: light) {
-    .stChatMessage table {
-        background: rgba(255, 255, 255, 0.9);
+    body {
+        background-color: rgb(241, 240, 238);  /* Lighter background matching image */
+        color: #2D3748;  /* Darker gray for better readability */
     }
 
-    .stChatMessage table th {
-        background: rgba(9, 9, 9, 0.3);
-        color: #333333;
+    .stApp {
+        background-color: rgb(241, 240, 238);
     }
 
-    .stChatMessage table td,
-    .stChatMessage table th {
-        border-bottom: 1px solid rgba(9, 9, 9, 0.3);
+    .st-emotion-cache-qdbtli.ea3mdgi2 {
+        background-color: transparent;
+    }
+    .st-emotion-cache-uhkwx6.ea3mdgi6 {
+        background-color: transparent;
+    }
+    
+    .fixed-grid svg path {
+        opacity: 0.2;
+        stroke: rgb(82, 82, 82);
+    }
+
+    .header-content h1 {
+        color: #2D3748 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 600;
+    }
+
+    .header-content h1::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        background: 
+            linear-gradient(45deg, rgba(254, 251, 199, 0.443) 25%, transparent 25%),
+            linear-gradient(-45deg, rgba(255, 192, 203, 0.2) 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, rgba(255, 253, 208, 0.2) 75%),
+            linear-gradient(-45deg, transparent 75%, rgba(255, 192, 219, 0.755) 75%);
+        background-size: 4px 4px;
+        background-color: rgba(255, 255, 255, 0.05);
+        filter: blur(3px);
+        border-radius: 10px;
+        z-index: -1;
+        animation: glowPulse 3s infinite alternate;
+    }
+
+    @keyframes glowPulse {
+        0% {
+            box-shadow: 
+                0 0 5px rgba(255, 253, 208, 0.4), 
+                0 0 10px rgba(255, 253, 208, 0.2), 
+                0 0 15px rgba(255, 192, 203, 0.3);
+        }
+        100% {
+            box-shadow: 
+                0 0 10px rgba(255, 253, 208, 0.4), 
+                0 0 20px rgba(255, 253, 208, 0.3), 
+                0 0 30px rgba(255, 192, 203, 0.4);
+        }
+    }
+
+    /* Chat Area Styles */
+    .stChatMessage {
+        background-color: rgba(246, 246, 246, 0.826) !important;  /* Very light gray-blue */
+        color: #2D3748 !important;
+        border: 1px solid rgb(226, 226, 226) !important;  /* Subtle border */
+    }
+
+    div[data-testid="stChatInput"] {
+        border-radius: 50px;
+        border: 1px solid rgba(190, 190, 185, 0.754);
+        background-color: rgb(255, 255, 248);  /* Very light gray-blue */
+    }
+
+    .stChatMessage[data-testid="assistant-message"] {
+        color: #2D3748 !important;
+    }
+
+    .stChatMessage .message {
+        color: #2D3748 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .stChatMessage:hover {
+        background-color: #F7FAFC !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Title Styles */
+    h1 {
+        color: #000000;
+        text-shadow: none;
+    }
+
+    /* Chat Input Styling */
+    .stChatInputContainer {
+        background-color: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .stChatInputContainer input {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        caret-color: #4A5568 !important;
+    }
+
+    .stChatInputContainer input::placeholder {
+        color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .stChatInputContainer button {
+        color: #4A5568 !important;
+        background-color: #EDF2F7;
+    }
+
+    /* Ensure black cursor for textarea as well */
+    textarea {
+        caret-color: #000000 !important;
+    }
+
+    /* Avatar Styles */
+    .stChatMessage .stAvatar img {
+        filter: none; /* Ensures avatar images look natural in the light theme */
+    }
+
+    /* Image Styles */
+    .stImage>img {
+        border-radius: 18px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        height: auto;
+    }
+
+    /* Ensure black text for all elements */
+    * {
+        color: #000000 !important;
+    }
+
+    /* Ensure chat messages have a white background */
+    .stChatMessageContent {
+        background-color: rgb(255, 255, 248);
+    }
+
+    /* Ensure the spinner is visible against any background */
+    .stSpinner {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Make Header Transparent */
+    .header-container {
+        background-color: transparent !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    /* Make Sidebar (Selection Panel) Transparent */
+    [data-testid="stSidebar"] {
+        background-color: transparent !important;
+        border-right: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    [class="st-ae st-af st-ag st-ah st-ai st-aj st-b6 st-ca st-cq st-bp st-cc st-bv st-bw st-bx st-by st-bz st-bt st-c0 st-c1 st-c2 st-cd st-c3 st-c4 st-c5 st-c6 st-c7"] {
+        background-color: transparent !important;
+        border-color: white !important;
+        padding: 15px;
+    }
+
+    /* Optional: Adjust Sidebar Content for Better Visibility */
+    [data-testid="stSidebar"] .sidebar-content {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        border-radius: 10px;
+        padding: 15px;
+    }
+
+    /* Optional: Ensure Header Text Remains Visible */
+    .header-content h1 {
+        color: #000000 !important; /* Black text for visibility on transparent background */
+        text-shadow: none !important;
     }
 }
 
@@ -1439,3 +1485,287 @@ div[class="st-emotion-cache-ugv6an e1se5lgy2 st-c7 st-c8 st-c9 st-ca st-cb st-am
     }
 }
 
+/* iOS Optimizations for Both Themes */
+@media (max-width: 768px) {
+    @supports (-webkit-touch-callout: none) {
+        body {
+            background-color: rgb(0, 0, 0);  /* Lighter background matching image */
+            color: #2D3748;  /* Darker gray for better readability */
+        }
+    
+        .stApp {
+            background-color: rgb(0, 0, 0);
+        }
+
+        .stRadio > div {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 4px !important;
+            background: rgba(0, 0, 0, 0.85) !important;
+            padding: 2px 4px !important;
+            width: 280px !important;
+            margin: 0 auto !important;
+            margin-left: -10px !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            border-radius: 50px;
+        }
+
+        .chat-message-container {
+            background-color: transparent;
+            max-width: 100%;
+        }
+
+        .stChatInputContainer {
+            max-width: 70%;
+        }
+
+        .stRadio > div > label {
+            position: relative;
+            padding: 8px 16px !important;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1 !important;
+            margin: 0 !important;
+            min-width: 100px !important;
+            text-align: center;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stRadio > div > label[data-selected="true"] {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgb(255, 255, 255);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1),
+                        0 0 15px rgba(255, 255, 255, 0.1);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Common Touch Optimizations */
+        .model-card, 
+        .stButton > button,
+        .stSelectbox,
+        .stTextInput > div > div > input {
+            min-height: 44px; /* iOS minimum touch target size */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Improved Scrolling */
+        .main .block-container,
+        .stChatMessage {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+        }
+
+        /* Better Text Input */
+        input, select, textarea {
+            font-size: 16px !important; /* Prevents iOS zoom on focus */
+            padding: 12px !important;
+            border-radius: 10px !important;
+        }
+
+        /* Enhanced Touch Feedback */
+        .stButton > button:active,
+        .model-card:active,
+        .stRadio > div > label:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+        }
+
+        .stChatMessage {
+            max-width: 100%;
+        }
+
+        /* Chat Input Fixes */
+        div[data-testid="stChatInput"] textarea {
+            word-wrap: break-word !important;
+            white-space: pre-wrap !important;
+            overflow-wrap: break-word !important;
+            max-width: 95% !important;
+            width: 100% !important;
+            padding-right: 40px !important; /* Space for send button */
+        }
+
+        div[data-testid="stChatInputTextArea"] {
+            max-width: 95% !important;
+            overflow: hidden !important;
+        }
+
+        .stChatInputContainer {
+            max-width: 95% !important;
+            padding: 10px 15px !important;
+            margin: 0 auto !important;
+            position: relative !important;
+        }
+
+        /* Ensure text stays within bounds */
+        textarea, 
+        div[data-baseweb="textarea"] {
+            overflow-x: hidden !important;
+            text-overflow: ellipsis !important;
+            word-break: break-word !important;
+        }
+
+        
+
+    }
+
+    /* Responsive Font Sizes */
+    .model-name { 
+        font-size: 16px; 
+        line-height: 1.3;
+    }
+    .model-description { 
+        font-size: 14px;
+        line-height: 1.4; 
+    }
+    .sidebar-header h2 { 
+        font-size: 18px;
+        line-height: 1.2;
+    }
+}
+
+/* iOS Optimizations for Light Theme */
+@media (max-width: 768px) {
+    @supports (-webkit-touch-callout: none) {
+        /* Light Theme Specific Styles */
+        @media (prefers-color-scheme: light) {
+            body {
+                background-color: rgb(241, 240, 238);  /* Light background */
+                color: #2D3748;  /* Darker text for readability */
+            }
+
+            .stApp {
+                background-color: rgb(241, 240, 238);
+            }
+
+            /* Image Styles for Light Theme */
+            .stImage > img {
+                border-radius: 18px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);  /* Softer shadow */
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .stImage > img:hover {
+                transform: scale(1.05);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);  /* Enhanced hover shadow */
+            }
+
+            /* Chat Message Styles */
+            .stChatMessage {
+                background-color: rgba(246, 246, 246, 0.9) !important;
+                color: #2D3748 !important;
+                border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            }
+
+            .stChatMessage[data-testid="assistant-message"] {
+                background-color: rgba(236, 236, 236, 0.9) !important;
+            }
+
+            .stChatMessage .message {
+                color: #2D3748 !important;
+            }
+
+            /* Chat Input Styles */
+            .stChatInputContainer {
+                background-color: #ffffff !important;
+                border: 1px solid rgba(0, 0, 0, 0.2) !important;
+            }
+
+            .stChatInputContainer input {
+                background-color: #f9f9f9 !important;
+                color: #2D3748 !important;
+            }
+
+            /* Radio Button Styles */
+            .stRadio > div {
+                background: rgba(255, 255, 255, 0.9) !important;
+                border: 1px solid rgba(0, 0, 0, 0.1) !important;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.05) !important;
+            }
+
+            .stRadio > div > label {
+                color: rgba(0, 0, 0, 0.8) !important;
+                border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            }
+
+            .stRadio > div > label[data-selected="true"] {
+                background: rgba(0, 0, 0, 0.05) !important;
+                color: #000000 !important;
+                border: 1px solid rgba(0, 0, 0, 0.2) !important;
+                box-shadow: 
+                    inset 0 0 8px rgba(0, 0, 0, 0.05),
+                    0 0 10px rgba(0, 0, 0, 0.05) !important;
+            }
+
+            /* Header Styles */
+            .header-content h1 {
+                color: #2D3748 !important;
+                text-shadow: none !important;
+            }
+
+            /* Sidebar Styles */
+            [data-testid="stSidebar"] {
+                background-color: rgba(255, 255, 255, 0.9) !important;
+            }
+
+            /* Ensure other elements maintain light theme aesthetics */
+            h1, h2, h3, h4, p, span, div {
+                color: #2D3748 !important;
+            }
+        }
+    }
+}
+
+/* Specific iOS Optimizations for Sidebar Header */
+@media (max-width: 768px) {
+    @supports (-webkit-touch-callout: none) {
+        /* Dark Theme for iOS */
+        .sidebar-header h2 {
+            margin-left: 0.5cm !important; /* Specific to iOS */
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Light Theme for iOS */
+        @media (prefers-color-scheme: light) {
+            .sidebar-header h2 {
+                margin-left: 0.5cm !important; /* Specific to iOS */
+                color: #2D3748;
+                text-shadow: none;
+            }
+        }
+    }
+}
+
+/* Fallback for non-iOS devices */
+@media not all and (-webkit-touch-callout: none) {
+    .sidebar-header h2 {
+        margin-left: 3cm; /* Margin for non-iOS devices */
+        font-size: 1.5rem;
+        color: #ffffff;
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1);
+        transition: text-shadow 0.3s ease;
+    }
+
+    /* Light Theme Fallback for non-iOS */
+    @media (prefers-color-scheme: light) {
+        .sidebar-header h2 {
+            margin-left: 3cm; /* Margin for non-iOS devices in light mode */
+            color: #2D3748;
+            text-shadow: none;
+        }
+    }
+}

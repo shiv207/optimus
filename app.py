@@ -13,13 +13,20 @@ from Features.grid import add_fixed_grid
 from Features.image_scrape import handle_image_search_and_description
 from Features.blackwall import poem
 from modals.tron_o import prompt_stream as optimus_prompt_stream, function_call as optimus_function_call
-from modals.genesis import gen_prompt_stream as genesis_prompt_stream, gen_function_call
+from modals.genesis_tron import gen_prompt_stream as genesis_prompt_stream, gen_function_call
 from modals.discovery_o1 import Perplexity
 from typing import Dict
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import html
-
+import re
+import os
+from dotenv import load_dotenv; load_dotenv()
+from googlesearch import search as google_search
+from duckduckgo_search import DDGS
+import concurrent.futures
+import json
+from concurrent.futures import ThreadPoolExecutor
 
 def generate_image(prompt):
     dreamscape_styles = ['dreamscape', 'anime', 'ghibli']
@@ -268,13 +275,6 @@ def streamlit_ui():
         font-weight: 400;
     }}
 
-    .sidebar-header h2 {{
-        font-size: 1.6rem;
-        margin-left: 3cm;
-        color: #ffffff;
-        text-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1);
-        transition: text-shadow 0.3s ease;
-    }}
 
     .sidebar-header h2:hover {{
         text-shadow: 0 0 15px rgba(255, 255, 255, 0.4), 0 0 30px rgba(255, 255, 255, 0.3), 0 0 45px rgba(255, 255, 255, 0.2);
@@ -379,14 +379,15 @@ def streamlit_ui():
             msg["role"], 
             avatar="Images/avatar/cool.png" if msg["role"] == "assistant" else "Backend/avatar/mars.png"
         ):
+            # Check if it's a stored message from history
             if "content" in msg:
-                st.markdown(msg["content"])
+                st.markdown(msg["content"], unsafe_allow_html=True)  # Allow HTML to preserve formatting
             if "image_path" in msg:
-                st.image(msg["image_path"], use_column_width=True, output_format="JPEG", quality=85)
+                st.image(msg["image_path"], use_container_width=True, output_format="JPEG", quality=85)
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Chat input
-    prompt = st.chat_input("Send a message")
+    prompt = st.chat_input("Message Genesis")
     
     # Check for J0HNY 5ILVERHAND trigger
     if prompt and prompt.lower().strip() in ["j0hny 5ilverhand","johny silverhand69", "johny : what would you write on my grave", "roger that roger 69","sourabhcansuck23"]:
@@ -435,169 +436,195 @@ def streamlit_ui():
             loading_placeholder.markdown(loading_animation_css, unsafe_allow_html=True)
 
             try:
-                # Use the appropriate module based on selected model
-                if selected_model == "Regular":
-                    function_result = optimus_function_call(prompt)
-                else:  # Fun mode
-                    function_result = gen_function_call(prompt)
-
-                if function_result["function"] == "generate_image":
-                    # Check if user is requesting to regenerate the last image
-                    regenerate_phrases = ["generate again", "generate the image again", "try again", "regenerate"]
-                    if any(phrase in prompt.lower() for phrase in regenerate_phrases) and st.session_state.last_image_prompt:
-                        # Use the last stored prompt
-                        generation_prompt = st.session_state.last_image_prompt
-                        st.markdown(f"*Regenerating image with prompt: '{generation_prompt}'*")
-                    else:
-                        # Store the new prompt and use it
-                        generation_prompt = prompt
-                        st.session_state.last_image_prompt = prompt
-
-                    # Display loading GIF based on theme
-                    import darkdetect
-
-                    if darkdetect.isDark():
-                        gif_path = "Images/loadin_animtions/dark.gif"
-                    else:
-                        gif_path = "Images/loadin_animtions/light.gif"
-                    
-                    # Create a loading box with the GIF
-                    import base64
-                    with open(gif_path, "rb") as f:
-                        contents = f.read()
-                        data_url = f"data:image/gif;base64,{base64.b64encode(contents).decode()}"
-                    
-                    loading_box_html = f"""
-                    <div style="width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; overflow: hidden;">
-                        <img src="{data_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
-                    </div>
-                    """
-                    loading_placeholder.markdown(loading_box_html, unsafe_allow_html=True)
-
-                    # Ensure the loading box is displayed while the image is being generated
-                    result = generate_image(generation_prompt)
-                    loading_placeholder.empty()  # Clear the loading box after image generation
-
-                    if result.startswith("Error:"):
-                        st.error(result)
-                        response = f"I'm sorry, but I encountered an error while trying to generate the image: {result}"
-                    else:
-                        loading_placeholder.empty()
-                        st.image(result, caption="Generated Image", use_column_width=True)
-
-                elif function_result["function"] == "image_search":
-                    try:
-                        # Call the image search and description handler
-                        result = handle_image_search_and_description(prompt)
-                        loading_placeholder.empty()
-                        
-                        # The response is handled within handle_image_search_and_description
-                        # Just append a simple confirmation message to the chat
-                        response = "I've searched for images related to your query. You can see them below."
-                        st.session_state.messages.append({
-                            "role": "assistant",
-                            "content": response,
-                            "is_image_response": True
-                        })
-                        
-                    except Exception as e:
-                        logging.error(f"Image search error: {str(e)}")
-                        response = f"I apologize, but I couldn't find any images: {str(e)}"
-                        st.session_state.messages.append({
-                            "role": "assistant",
-                            "content": response,
-                            "is_image_response": True
-                        })
-                        
-                elif function_result["function"] == "web_search":
+                # Check if this is an image search request
+                if any(keyword in prompt.lower() for keyword in ["show me", "find images", "search images", "look for images", "find pictures", "show pictures"]):
                     loading_placeholder.empty()
-                    search_animation = st.empty()
-                    search_animation.markdown(
-                        """
-                        <style>
-                            .search-container {
-                                display: flex;
-                                justify-content: center;
-                                align-items: center;
-                                padding: 12px;
-                                margin: 8px 0;
-                            }
-                            .searching {
-                                font-size: 0.9rem;
-                                font-weight: 490;
-                                margin-right: 1015px;
-                                margin-top: -15px;
-                                position: fixed;
-                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                                color: #cccccc;
-                                background: linear-gradient(
-                                    90deg,
-                                    #636363,
-                                    #ffffff,
-                                    #636363
-                                );
-                                background-size: 200%;
-                                -webkit-background-clip: text;
-                                background-clip: text;
-                                -webkit-text-fill-color: transparent;
-                                animation: shimmer 3s infinite linear;
-                                letter-spacing: 0.5px;
-                            }
-                            @keyframes shimmer {
-                                0% {
-                                    background-position: 200%;
-                                }
-                                100% {
-                                    background-position: 0%;
-                                }
-                            }
-                            @media (max-width: 768px) {
-                                .search-container {
-                                    padding: 8px;
-                                    margin: 6px 0;
-                                }
-                                .searching {
-                                    font-size: 0.8rem;
-                                    margin-right: 6cm;
-                                    margin-top: -0.4cm;
-                                }
-                            }
-                            @supports (-webkit-touch-callout: none) {
-                                .searching {
-                                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                                }
-                            }
-                        </style>
-                        <div class="search-container">
-                            <div class="searching">Searching</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    web_search_result = web_search(prompt)
-                    search_animation.empty()
-                    if web_search_result:
-                        st.markdown(web_search_result)
-                        st.session_state.messages.append({"role": "assistant", "content": web_search_result})
-                        say(web_search_result)
-
+                    st.markdown("🔍 Searching for images...")
+                    handle_image_search_and_description(prompt)
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": "Here are the images I found based on your request.",
+                        "type": "image_search"
+                    })
                 else:
-                    # Use the appropriate stream based on selected model
+                    # Use the appropriate module based on selected model
                     if selected_model == "Regular":
-                        response_generator = optimus_prompt_stream(prompt=prompt)
+                        function_result = optimus_function_call(prompt)
                     else:  # Fun mode
-                        response_generator = genesis_prompt_stream(prompt=prompt)
-                    
-                    response = ""
-                    message_placeholder = st.empty()
-                    loading_placeholder.empty()
-                    for chunk in response_generator:
-                        response += chunk
-                        message_placeholder.markdown(response + "▌")
-                    message_placeholder.markdown(response)
+                        function_result = gen_function_call(prompt)
 
-                    st.session_state.messages.append({"role": "assistant", "content": response})
-                    say(response)
+                    if function_result["function"] == "generate_image":
+                        # Check if user is requesting to regenerate the last image
+                        regenerate_phrases = ["generate again", "generate the image again", "try again", "regenerate"]
+                        if any(phrase in prompt.lower() for phrase in regenerate_phrases) and st.session_state.last_image_prompt:
+                            # Use the last stored prompt
+                            generation_prompt = st.session_state.last_image_prompt
+                            st.markdown(f"*Regenerating image with prompt: '{generation_prompt}'*")
+                        else:
+                            # Store the new prompt and use it
+                            generation_prompt = prompt
+                            st.session_state.last_image_prompt = prompt
+
+                        # Display loading GIF based on theme
+                        import darkdetect
+
+                        if darkdetect.isDark():
+                            gif_path = "Images/loadin_animtions/dark.gif"
+                        else:
+                            gif_path = "Images/loadin_animtions/light.gif"
+                        
+                        # Create a loading box with the GIF
+                        import base64
+                        with open(gif_path, "rb") as f:
+                            contents = f.read()
+                            data_url = f"data:image/gif;base64,{base64.b64encode(contents).decode()}"
+                        
+                        loading_box_html = f"""
+                        <div style="width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+                            <img src="{data_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                        </div>
+                        """
+                        loading_placeholder.markdown(loading_box_html, unsafe_allow_html=True)
+
+                        # Ensure the loading box is displayed while the image is being generated
+                        result = generate_image(generation_prompt)
+                        loading_placeholder.empty()  # Clear the loading box after image generation
+
+                        if result.startswith("Error:"):
+                            st.error(result)
+                            response = f"I'm sorry, but I encountered an error while trying to generate the image: {result}"
+                        else:
+                            loading_placeholder.empty()
+                            st.image(result, caption="Generated Image", use_container_width=True)
+
+                    elif function_result["function"] == "image_search":
+                        try:
+                            # Call the image search and description handler
+                            result = handle_image_search_and_description(prompt)
+                            loading_placeholder.empty()
+                            
+                            # The response is handled within handle_image_search_and_description
+                            # Just append a simple confirmation message to the chat
+                            response = "I've searched for images related to your query. You can see them below."
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": response,
+                                "is_image_response": True
+                            })
+                            
+                        except Exception as e:
+                            logging.error(f"Image search error: {str(e)}")
+                            response = f"I apologize, but I couldn't find any images: {str(e)}"
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": response,
+                                "is_image_response": True
+                            })
+                            
+                    elif function_result["function"] == "web_search":
+                        loading_placeholder.empty()
+                        search_animation = st.empty()
+                        search_animation.markdown(
+                            """
+                            <style>
+                                .search-container {
+                                    display: flex;
+                                    justify-content: flex-start;
+                                    align-items: flex-start;
+                                    position: relative;
+                                    width: 100%;
+                                    padding: 0;
+                                    margin: 0;
+                                }
+                                .searching {
+                                    font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+                                    font-weight: 490;
+                                    position: relative;
+                                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                                    color: #cccccc;
+                                    background: linear-gradient(
+                                        90deg,
+                                        #636363,
+                                        #ffffff,
+                                        #636363
+                                    );
+                                    background-size: 200%;
+                                    -webkit-background-clip: text;
+                                    background-clip: text;
+                                    -webkit-text-fill-color: transparent;
+                                    animation: shimmer 4s infinite linear;
+                                    letter-spacing: max(0.5px, 0.05vw);
+                                    transform: translateX(calc(-0.2vw + 2.5px)) translateY(calc(-0.4vh - 2px));
+                                    margin-left: 0.05vw;
+                                }
+                                @keyframes shimmer {
+                                    0% { background-position: 200%; }
+                                    100% { background-position: 0%; }
+                                }
+
+                                /* Style for Perplexity response */
+                                .perplexity-response {
+                                    position: relative;
+                                    transform: translateY(-4px);
+                                    margin-top: -4px;
+                                }
+                            </style>
+                            <div class="search-container">
+                                <div class="searching">Searching</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        
+                        # Get search results
+                        perplexity = Perplexity()
+                        results = perplexity.fetch_search_results(prompt)
+                        
+                        if results and 'response' in results:
+                            # Display the AI response
+                            st.markdown(results['response'], unsafe_allow_html=True)
+                            
+                            # Display search results if available
+                            if results.get('search_results'):
+                                display_sources(results['search_results'])
+                            
+                            # Add to chat history
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": results['response']
+                            })
+                        
+                        search_animation.empty()
+
+                    else:
+                        # Use the appropriate stream based on selected model
+                        if selected_model == "Regular":
+                            response_generator = optimus_prompt_stream(prompt=prompt)
+                        else:  # Fun mode
+                            response_generator = genesis_prompt_stream(prompt=prompt)
+                        
+                        response = ""
+                        message_placeholder = st.empty()
+                        loading_placeholder.empty()
+                        for chunk in response_generator:
+                            response += chunk
+                            message_placeholder.markdown(response + "▌")
+                        message_placeholder.markdown(response)
+
+                        # Store the final formatted response in session state
+                        if function_result["function"] not in ["generate_image", "image_search", "web_search"]:
+                            final_response = response  # This is the fully generated response
+                            st.session_state.messages.append({
+                                "role": "assistant", 
+                                "content": final_response
+                            })
+                        else:
+                            # Handle other function responses appropriately
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": response,
+                                "function_type": function_result["function"]
+                            })
             except Exception as e:
                 loading_placeholder.empty()
                 st.error(f"An error occurred: {str(e)}")
@@ -608,45 +635,16 @@ def streamlit_ui():
 
 def web_search(prompt: str) -> None:
     try:
+        # Load Perplexity CSS first
+        load_perplexity_css()
+        
         perplexity = Perplexity()
         final_answer = ""
         sources = None
         images = None
         placeholder = st.empty()
 
-        for answer in perplexity.generate_answer(prompt):
-            if "error" in answer:
-                st.error(answer["error"])
-                return
-
-            if answer.get('answer'):
-                final_answer = answer['answer']
-                images = answer.get('images', [])
-                
-                response_html = f"""
-                <div style="margin-bottom: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px;">
-                        {''.join([
-                            f'<div style="aspect-ratio: 1; position: relative;">'
-                            f'<img src="{img}" alt="Search result" '
-                            f'style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">'
-                            f'</div>'
-                            for img in images[:4]
-                        ])}
-                    </div>
-                    <div style="font-size: 16px; line-height: 1.6; color: #d1d5db;">
-                        {final_answer}
-                    </div>
-                </div>
-                """
-                
-                placeholder.markdown(response_html, unsafe_allow_html=True)
-            
-            if answer.get('references'):
-                sources = answer['references']
-
-        if sources:
-            display_sources(sources)
+        # Rest of your web_search function...
 
     except Exception as e:
         st.error(f"Search error: {str(e)}")
@@ -663,7 +661,7 @@ def display_sources(sources):
     for idx, source in enumerate(main_sources):
         with cols[idx]:
             favicon_url = f"https://www.google.com/s2/favicons?domain={source['url']}&sz=32"
-            hostname = source['url'].split('//')[1].split('/')[0].replace('www.', '')
+            hostname = urlparse(source['url']).netloc.replace('www.', '')
             
             title = source.get("title")
             if not title or title == "Unknown Title":
@@ -674,7 +672,6 @@ def display_sources(sources):
             <div class="source-tile">
                 <div class="source-content">
                     <div class="source-title">{title}</div>
-                    <a href="{source['url']}" target="_blank" class="source-url">{source['url']}</a>
                 </div>
                 <div class="source-footer">
                     <img src='{favicon_url}' class="source-favicon">
@@ -706,6 +703,7 @@ def display_sources(sources):
     
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # Add the CSS
     st.markdown("""
     <style>
     @media (prefers-color-scheme: dark) {
@@ -713,17 +711,8 @@ def display_sources(sources):
             background-color: rgba(32, 33, 35, 0.7);
             color: #e6e6e6;
         }
-        .source-url, .source-hostname, .source-separator, .source-index, .remaining-text {
+        .source-hostname, .source-separator, .source-index, .remaining-text {
             color: #888;
-        }
-    }
-    @media (prefers-color-scheme: light) {
-        .source-tile {
-            background-color: #f0f2f5;
-            color: #333;
-        }
-        .source-url, .source-hostname, .source-separator, .source-index, .remaining-text {
-            color: #666;
         }
     }
     .source-tile {
@@ -750,20 +739,12 @@ def display_sources(sources):
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .source-url {
-        font-size: 11px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-decoration: none;
-    }
     .source-footer {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         margin-top: auto;
+        opacity: 0.8;
     }
     .source-favicon {
         width: 14px;
@@ -788,52 +769,72 @@ def display_sources(sources):
         width: 20px;
         height: 20px;
         opacity: 0.8;
-        display: block;
     }
     .remaining-text {
         font-size: 13px;
         margin-top: 4px;
     }
-    @media (max-width: 768px) {
-        .source-tile {
-            height: auto;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 15px;
-        }
-        .source-content {
-            font-size: 14px;
-        }
-        .source-title {
-            font-size: 16px;
-            margin-bottom: 5px;
-        }
-        .source-url {
-            font-size: 12px;
-        }
-        .source-footer {
-            margin-top: 10px;
-        }
-        .source-favicon {
-            width: 16px;
-            height: 16px;
-        }
-        .source-hostname, .source-separator, .source-index {
-            font-size: 12px;
-        }
-        .remaining-sources {
-            flex-direction: column;
-        }
-        .remaining-favicons {
-            margin-bottom: 10px;
-        }
-        .remaining-favicon {
-            width: 24px;
-            height: 24px;
-        }
-        .remaining-text {
-            font-size: 14px;
-        }
+    .source-container {
+        margin-top: 3.5rem;
+        margin-left: 52px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .source-tile {
+        background-color: rgba(32, 33, 35, 0.7);
+        padding: 16px;
+        border-radius: 12px;
+        margin: 8px 10px 8px 0;
+        height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex: 1;
+        min-width: 250px;
+        max-width: calc(33.333% - 14px);
+    }
+    .source-url {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+def load_perplexity_css():
+    st.markdown("""
+    <style>
+    /* Lock main container */
+    .main .block-container {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Prevent any horizontal movement */
+    .stApp {
+        position: fixed !important;
+        width: 100vw !important;
+        left: 0 !important;
+        margin: 0 !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Lock chat elements */
+    .stChatMessage, .stChatInputContainer {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* Ensure content stays centered */
+    .element-container {
+        transform: none !important;
+        transition: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -848,20 +849,24 @@ def get_website_title(url):
         
         title = None
         
+        # Try OG title first
         og_title = soup.find('meta', property='og:title')
         if og_title:
             title = og_title.get('content')
         
+        # Try Twitter title next
         if not title:
             twitter_title = soup.find('meta', {'name': 'twitter:title'})
             if twitter_title:
                 title = twitter_title.get('content')
         
+        # Fall back to regular title
         if not title and soup.title:
             title = soup.title.string
         
         if title:
             title = html.unescape(title.strip())
+            # Remove common suffixes
             common_suffixes = [' - Wikipedia', ' | Wikipedia', ' - Britannica', ' | Britannica']
             for suffix in common_suffixes:
                 if title.endswith(suffix):
@@ -870,16 +875,179 @@ def get_website_title(url):
         
         return None
     except Exception as e:
-        print(f"Error fetching title for {url}: {str(e)}")
+        logging.error(f"Error fetching title for {url}: {str(e)}")
         return None
 
 def prepare_sources(sources):
+    """Prepare sources by fetching missing titles."""
     for source in sources:
         if not source.get('title') or source['title'] == "Unknown Title":
             title = get_website_title(source['url'])
             if title:
                 source['title'] = title
     return sources
+
+def handle_image_search_and_description(prompt: str) -> None:
+    """
+    Handle image search and description using DuckDuckGo
+    """
+    try:
+        with st.spinner("🔍 Searching for images..."):
+            perplexity = Perplexity()
+            results = perplexity.fetch_search_results(prompt, include_images=True)
+            
+            if not results.get('image_results'):
+                st.warning("No images found for your query. Try a different search term.")
+                return
+            
+            # Display search info
+            st.markdown(f"### 🖼️ Found {len(results['image_results'])} images for: _{prompt}_")
+            
+            # Create columns for the image grid
+            cols = st.columns(4)
+            
+            # Display images in grid
+            for idx, image in enumerate(results['image_results']):
+                with cols[idx % 4]:
+                    try:
+                        # Container for each image
+                        with st.container():
+                            # Image display
+                            st.image(
+                                image['image_url'],
+                                caption=image['title'],
+                                use_column_width=True
+                            )
+                            
+                            # Source link
+                            st.markdown(
+                                f"<a href='{image['context_url']}' target='_blank' "
+                                f"class='source-link'>🔗 Source</a>",
+                                unsafe_allow_html=True
+                            )
+                            
+                            # Analyze button
+                            if st.button("🔍 Analyze", key=f"analyze_{idx}"):
+                                with st.spinner("Analyzing image..."):
+                                    try:
+                                        analysis = perplexity.analyze_image(image['image_url'])
+                                        st.info(analysis)
+                                    except Exception as e:
+                                        st.error("Failed to analyze image. Please try again.")
+                                        logging.error(f"Image analysis error: {str(e)}")
+                                        
+                    except Exception as e:
+                        st.error("Failed to load image")
+                        logging.error(f"Error loading image {idx}: {str(e)}")
+            
+            # Add cyberpunk styling
+            st.markdown("""
+            <style>
+            /* Image Grid Styling */
+            .stImage {
+                position: relative;
+                margin-bottom: 0.5rem;
+                border-radius: 8px;
+                overflow: hidden;
+                border: 2px solid rgba(156, 194, 255, 0.2);
+                transition: all 0.3s ease;
+            }
+            
+            .stImage:hover {
+                transform: translateY(-5px);
+                border-color: rgba(156, 194, 255, 0.6);
+                box-shadow: 0 8px 24px rgba(156, 194, 255, 0.3);
+            }
+            
+            .stImage img {
+                width: 100%;
+                height: auto;
+                display: block;
+                border-radius: 6px;
+            }
+            
+            /* Button Styling */
+            .stButton > button {
+                width: 100%;
+                background: rgba(0, 0, 0, 0.5) !important;
+                color: #9cc2ff !important;
+                border: 1px solid rgba(156, 194, 255, 0.3) !important;
+                border-radius: 6px !important;
+                padding: 0.5rem !important;
+                font-family: 'Courier New', monospace !important;
+                font-size: 0.8rem !important;
+                text-transform: uppercase !important;
+                letter-spacing: 1px !important;
+                margin: 0.5rem 0 !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .stButton > button:hover {
+                background: rgba(156, 194, 255, 0.1) !important;
+                border-color: rgba(156, 194, 255, 0.6) !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 4px 12px rgba(156, 194, 255, 0.2) !important;
+            }
+            
+            /* Source Link Styling */
+            .source-link {
+                display: inline-block;
+                width: 100%;
+                padding: 0.4rem;
+                margin: 0.2rem 0;
+                background: rgba(0, 0, 0, 0.3);
+                color: #9cc2ff !important;
+                text-align: center;
+                text-decoration: none !important;
+                font-family: 'Courier New', monospace;
+                font-size: 0.8rem;
+                border: 1px solid rgba(156, 194, 255, 0.2);
+                border-radius: 4px;
+                transition: all 0.3s ease;
+            }
+            
+            .source-link:hover {
+                background: rgba(156, 194, 255, 0.1);
+                border-color: rgba(156, 194, 255, 0.4);
+                color: #ffffff !important;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(156, 194, 255, 0.2);
+            }
+            
+            /* Info Box Styling */
+            .stAlert {
+                background: rgba(0, 0, 0, 0.3) !important;
+                color: #ffffff !important;
+                border: 1px solid rgba(156, 194, 255, 0.2) !important;
+                border-radius: 8px !important;
+                padding: 1rem !important;
+                margin: 0.5rem 0 !important;
+                font-family: 'Courier New', monospace !important;
+            }
+            
+            .stAlert:hover {
+                border-color: rgba(156, 194, 255, 0.4) !important;
+                box-shadow: 0 0 15px rgba(156, 194, 255, 0.1) !important;
+            }
+            
+            /* Caption Styling */
+            .caption {
+                color: #9cc2ff;
+                font-size: 0.8rem;
+                margin: 0.3rem 0;
+                font-family: 'Courier New', monospace;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+    except Exception as e:
+        st.error(f"An error occurred during image search: {str(e)}")
+        logging.error(f"Image search error: {str(e)}")
 
 def display_silverhand():
     st.markdown("""
@@ -913,6 +1081,7 @@ def display_silverhand():
     """, unsafe_allow_html=True)
     
     st.markdown(f'<div class="future-grave"><div class="grave-text">{poem}</div></div>', unsafe_allow_html=True)
+
 
 def main():
     streamlit_ui()

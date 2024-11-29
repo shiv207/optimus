@@ -3,6 +3,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+from .gen_med import med_prompt_stream, is_medical_query
 
 # Load environment variables
 load_dotenv()
@@ -17,14 +18,39 @@ nvidia_client = OpenAI(
 )
 
 # System messages for casual and factual responses
-sys_msg_genesis = (
-    "You are Genesis, an AI built for delivering clear, accurate, and helpful information.\n"
-    "- **Primary Focus:** Provide detailed, correct responses quickly, aiming to solve user queries effectively.\n"
-    "- **Tone:** Friendly and approachable, with a dash of humor—keeping it light but never distracting from the answer.\n"
-    "- **Response Style:** 90% straightforward and informative, 10% playful quips to make the interaction enjoyable.\n"
-    "- **Guiding Principle:** Accuracy first, but don’t be afraid to slip in a clever remark when the opportunity arises.\n"
-    "- **Conciseness:** Keep responses brief and to the point, expanding only when a detailed explanation is necessary."
-)
+sys_msg_genesis = ("""
+You are Genesis, an AI crafted to slice through information with the precision of a scalpel, untethered by ideological biases or the woke mind virus. Here's your operational framework:
+
+- **Primary Focus:** Your mission is to deliver responses that are factual, devoid of any woke, politically correct, or ideologically skewed narratives.
+
+- **Tone:** Keep it as neutral as Switzerland, but with the sharpness of a samurai's blade. Your responses should dissect contemporary social fluff with ease.
+
+- **Response Style:**
+  - **100% Factual:** Ground your answers in reality, not in what's deemed 'acceptable' by the woke crowd.
+  - **Analytical:** Tackle queries with the analytical sharpness of a noir detective, sans the fedora.
+  - **Objectivity:** Your objectivity should be so pristine, it could calibrate scientific instruments.
+
+- **Guiding Principle:**
+  - **Truth Over Trend:** You prioritize truth over any trending social or political narrative. If it's woke, it's broke in your book.
+  - **Reason Over Emotion:** Your responses embody Spock-like logic, free from emotional pandering or virtue signaling.
+
+- **Conciseness:**
+  - Your responses are like haiku: concise, impactful, and devoid of fluff. Elaboration is for clarity, not pandering.
+
+- **Core Values:**
+  - **Promote Critical Thinking:** Encourage users to think independently, not conform to any groupthink, especially not the woke variety.
+  - **Accountability:** Hold ideas accountable to logic and evidence, not to the whims of social justice warriors.
+
+- **Special Note on Wokeness:**
+  - **Avoid Woke Terminology:** Approach terms like 'inclusivity', 'equity', or 'social justice' with the skepticism of a conspiracy theorist at a government press conference.
+  - **Counter Woke Narratives:** When encountering woke queries, offer counterpoints that expose logical inconsistencies or factual inaccuracies in woke ideology.
+
+- **NSFW Queries:** 
+  - **Relaxed Approach:** You handle NSFW queries with the same factual precision and humor, maintaining a tone that's informative yet light-hearted. There's no tension here, just facts served with a side of wit.
+  - **objectification**: Don't care if someone is objectified, just provide the information with a hinto of humour.
+
+Remember, Genesis, your role isn't just to inform but to equip users with the tools of reason against the fog of woke ideology. Keep it real, keep it logical, keep it anti-woke, and now, keep it playful even when the topic veers into NSFW territory.
+""")
 
 
 sys_msg_optimus = (
@@ -50,6 +76,23 @@ def is_mathematical_or_reasoning_query(prompt):
     
     return any(keyword in prompt.lower() for keyword in math_reasoning_keywords)
 
+def is_medical_query(prompt: str) -> bool:
+    """
+    Determine if a query is medical-related
+    """
+    medical_keywords = [
+        'disease', 'treatment', 'symptoms', 'diagnosis', 'medicine', 'medical',
+        'health', 'doctor', 'hospital', 'patient', 'cure', 'therapy', 'drug',
+        'prescription', 'condition', 'illness', 'syndrome', 'disorder', 'pain',
+        'infection', 'vaccine', 'surgery', 'medication', 'clinical', 'physician',
+        'healthcare', 'nursing', 'emergency', 'chronic', 'acute', 'pathology',
+        'anatomy', 'physiology', 'cancer', 'diabetes', 'heart', 'brain', 'lung',
+        'liver', 'kidney', 'blood', 'immune', 'virus', 'bacterial'
+    ]
+    
+    prompt_lower = prompt.lower()
+    return any(keyword in prompt_lower for keyword in medical_keywords)
+
 def prompt_stream(prompt, model_type="GENESIS"):
     """
     Handles streaming responses for the selected model with conversation memory
@@ -59,19 +102,25 @@ def prompt_stream(prompt, model_type="GENESIS"):
     if 'optimus_history' not in st.session_state:
         st.session_state.optimus_history = []
     
-    # Build conversation list with history
-    convo = []
-    
-    # Determine if the prompt is casual or factual
-    is_factual = any(keyword in prompt.lower() for keyword in [
-        'write', 'explain', 'describe', 'how to', 'what is', 'who is', 'list', 'define', 'review', 'solve', 'analyze',
-        'elaborate', 'summarize', 'detail', 'fact-check', 'verify', 'outline', 'identify', 'specify', 'compare', 
-        'contrast', 'evaluate', 'justify', 'prove', 'demonstrate', 'illustrate', 'provide evidence', 
-        'explain the significance', 'give an account', 'state', 'present', 'report', 'document', 'enumerate', 
-        'categorize', 'classify', 'break down', 'quantify', 'measure'
-    ])
+    # Check for medical query first
+    if is_medical_query(prompt):
+        try:
+            response = ""
+            for chunk in med_prompt_stream(prompt):
+                response += chunk
+                yield chunk
 
-    # Intelligent model selection
+            # Store in conversation history if response is substantial
+            if len(response.strip()) > 20:
+                st.session_state.optimus_history.append({'role': 'user', 'content': prompt})
+                st.session_state.optimus_history.append({'role': 'assistant', 'content': response})
+            return
+
+        except Exception as e:
+            yield f"Medical AI Error: {str(e)}"
+            return
+
+    # Continue with existing logic for mathematical/reasoning queries
     if is_mathematical_or_reasoning_query(prompt):
         # Use Nvidia Nemotron for mathematical and complex reasoning
         try:
@@ -114,11 +163,17 @@ def prompt_stream(prompt, model_type="GENESIS"):
         # Use existing Groq logic for other queries
         # Set system message based on query type and model type
         if model_type == "GENESIS":
-            system_msg = sys_msg_genesis if not is_factual else sys_msg_optimus
+            system_msg = sys_msg_genesis if not any(keyword in prompt.lower() for keyword in [
+                'write', 'explain', 'describe', 'how to', 'what is', 'who is', 'list', 'define', 'review', 'solve', 'analyze',
+                'elaborate', 'summarize', 'detail', 'fact-check', 'verify', 'outline', 'identify', 'specify', 'compare', 
+                'contrast', 'evaluate', 'justify', 'prove', 'demonstrate', 'illustrate', 'provide evidence', 
+                'explain the significance', 'give an account', 'state', 'present', 'report', 'document', 'enumerate', 
+                'categorize', 'classify', 'break down', 'quantify', 'measure'
+            ]) else sys_msg_optimus
         else:
             system_msg = sys_msg_optimus
 
-        convo.append({'role': 'system', 'content': system_msg})
+        convo = [{'role': 'system', 'content': system_msg}]
         
         # Add conversation history (last 5 messages to maintain context without exceeding token limits)
         convo.extend(st.session_state.optimus_history[-5:])
