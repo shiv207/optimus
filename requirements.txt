@@ -5,9 +5,11 @@ duckduckgo_search==6.3.3
 google_api_python_client==2.146.0
 googlesearch_python==1.2.5
 groq==0.12.0
+httpx==0.28.0
 newsapi_python==0.2.7
 nltk==3.9.1
 openai==1.55.3
+openai_unofficial==0.1.2
 Pillow==11.0.0
 python-dotenv==1.0.1
 Requests==2.32.3

@@ -67,18 +67,28 @@ class Perplexity:
         self.ddg = DDGS()
 
     def _create_session_with_retry(self):
-        session = requests.Session()
-        retries = Retry(
+        """Create a session with retry mechanism and proper headers"""
+        session = Session()
+        
+        # Configure retry strategy
+        retry_strategy = Retry(
             total=3,
-            backoff_factor=0.5,
-            status_forcelist=[500, 502, 503, 504]
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
         )
-        session.mount('https://', HTTPAdapter(max_retries=retries))
+        
+        # Add adapters with retry strategy
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        # Set common headers
         session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5"
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
         })
+        
         return session
 
     def google_search(self, query: str, num_results: int = 8) -> List[Dict]:
@@ -423,41 +433,39 @@ Format the response to work with the Perplexity UI styling, using smaller header
             return None
 
     def _extract_page_content(self, url: str, max_length: int = 2000) -> str:
-        """
-        Optimized content extraction with faster parsing
-        """
+        """Optimized content extraction with faster parsing and better error handling"""
         try:
-            cache_key = hashlib.md5(url.encode()).hexdigest()
-            if cache_key in self.url_cache:
-                return self.url_cache[cache_key]
+            # Skip problematic URLs
+            parsed_url = urlparse(url)
+            if any(domain in parsed_url.netloc for domain in ['instagram.com', 'facebook.com', 'twitter.com']):
+                return ""
 
-            # Set shorter timeout
-            response = self.session.get(url, timeout=3, verify=False)
+            # Use session for requests
+            response = self.session.get(url, timeout=10, verify=False)
             response.raise_for_status()
-            
-            # Use lxml parser for faster parsing
+
+            # Use lxml parser for better performance
             soup = BeautifulSoup(response.text, 'lxml')
-            
+
             # Remove unwanted elements
-            for tag in ('script', 'style', 'nav', 'header', 'footer'):
-                for element in soup.find_all(tag):
-                    element.decompose()
+            for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'iframe']):
+                tag.decompose()
+
+            # Extract text content
+            text = ' '.join(p.get_text().strip() for p in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']))
             
-            # Extract text
-            paragraphs = soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
-            content = ' '.join(p.get_text(strip=True) for p in paragraphs)
+            # Clean and normalize text
+            text = re.sub(r'\s+', ' ', text).strip()
             
-            # Truncate if needed
-            if len(content) > max_length:
-                content = content[:max_length] + '...'
-            
-            # Cache content
-            self.url_cache[cache_key] = content
-            return content
+            # Truncate to max length while keeping whole words
+            if len(text) > max_length:
+                text = text[:max_length].rsplit(' ', 1)[0]
+
+            return text
 
         except Exception as e:
             logging.error(f"Content Extraction Error for {url}: {str(e)}")
-            return ''
+            return ""
 
     def _calculate_result_score(self, result: Dict) -> float:
         """
