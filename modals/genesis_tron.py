@@ -9,13 +9,11 @@ from .gen_med import is_medical_query, med_prompt_stream
 load_dotenv()
 
 # Initialize Groq client
-try:
-    groq_client = Groq(
-        api_key=os.getenv("GROQ_API_KEY")
-    )
-except Exception as e:
-    st.error(f"Failed to initialize Groq client: {str(e)}")
-    groq_client = None
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY environment variable is not set. Please set it in your .env file.")
+
+groq_client = Groq(api_key=GROQ_API_KEY)
 
 # Initialize Nvidia Nemotron client
 nvidia_client = OpenAI(

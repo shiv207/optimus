@@ -13,15 +13,12 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Initialize Groq client
-try:
-    if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY environment variable is not set")
-    groq_client = Groq(
-        api_key=GROQ_API_KEY
-    )
-except Exception as e:
-    st.error(f"Failed to initialize Groq client: {str(e)}")
-    groq_client = None
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY environment variable is not set. Please set it in your .env file.")
+
+groq_client = Groq(
+    api_key=GROQ_API_KEY
+)
 
 def scrape_images(query, max_results=4):
     """Search for images with guaranteed results."""
